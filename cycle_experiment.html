@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surf My Cycle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f0f2;color:#333;min-height:100vh}
+:root{--accent:#e84a6a;--accent-light:#fce4ea;--bg:#f8f0f2;--surface:#fff;--border:#e8d5da;--text:#2d1f24;--muted:#9a7a82;--radius:12px;--shadow:0 2px 12px rgba(232,74,106,.1)}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;box-shadow:var(--shadow)}
+header h1{font-size:18px;font-weight:700;color:var(--accent)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{padding:8px 18px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);transition:.2s;border:none;background:transparent}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){background:var(--accent-light);color:var(--accent)}
+.page{display:none;height:calc(100vh - 56px)}
+.page.active{display:flex}
+#page-record{flex-direction:row}
+.cal-panel{width:50%;padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:6px 2px}
+.cal-nav button{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--accent)}
+.cal-nav h3{font-size:14px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-head{text-align:center;font-size:10px;font-weight:600;color:var(--muted);padding:2px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;font-size:10px;font-weight:500;background:var(--surface);border:2px solid transparent;position:relative;transition:.15s;min-height:24px;padding:1px}
+.cal-day:hover{border-color:var(--accent);background:var(--accent-light)}
+.cal-day.phase-menstrual{background:rgba(231,76,60,0.12)}
+.cal-day.phase-follicular{background:rgba(243,156,18,0.12)}
+.cal-day.phase-ovulation{background:rgba(233,30,99,0.12)}
+.cal-day.phase-luteal{background:rgba(155,89,182,0.12)}
+.cal-day.other-month{opacity:.3}
+.cal-day.today{border-color:var(--accent);font-weight:700}
+.cal-day.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cal-day.has-data::after{content:'';width:3px;height:3px;border-radius:50%;background:var(--accent);position:absolute;bottom:1px}
+.cal-day.selected.has-data::after{background:#fff}
+.time-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;gap:4px;margin-bottom:12px;border:1px solid var(--border)}
+.time-tab{flex:1;padding:10px 8px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;background:transparent;color:var(--muted);text-align:center;transition:.2s;display:flex;align-items:center;justify-content:center;gap:4px}
+.time-tab.active{background:#fff;color:var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.time-tab:not(.active):hover{background:rgba(255,255,255,.5)}
+.time-dot{width:4px;height:4px;border-radius:50%;position:absolute;top:2px;right:2px}
+.time-dot.morning{background:#3498db}
+.time-dot.afternoon{background:#f39c12}
+.time-dot.evening{background:#9b59b6}
+.time-emoji{font-size:10px;margin:0 1px}
+.time-emoji-row{display:flex;justify-content:center;gap:2px;margin-bottom:2px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:6px 0}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.legend-color{width:12px;height:12px;border-radius:3px}
+.rec-panel{width:50%;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.rec-date-info{background:linear-gradient(135deg,#fdf2f4 0%,#fae8ec 100%);border-radius:0;padding:24px 20px;color:#8b6b73;border-bottom:1px solid #f0d5dc}
+.rec-date-info h2{font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-0.5px}
+.rec-date-info .phase-tag{display:inline-flex;align-items:center;margin-top:8px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;color:#fff;background:rgba(255,255,255,0.25);backdrop-filter:blur(10px)}
+.rec-date-info .tip{margin-top:12px;font-size:13px;line-height:1.6;opacity:0.95;padding-top:12px;border-top:1px solid rgba(255,255,255,0.2)}
+.cycle-insight{background:linear-gradient(135deg,var(--accent-light) 0%,#fff 100%);border-radius:var(--radius);padding:10px 12px;margin-top:10px;border-left:3px solid var(--accent)}
+.cycle-insight-title{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.cycle-insight-text{font-size:10px;color:var(--text);line-height:1.5}
+.cycle-insight-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.cycle-insight-tag{font-size:9px;padding:2px 6px;border-radius:10px;background:#fff;border:1px solid var(--border);color:var(--muted)}
+.card{background:#fff;border-radius:16px;padding:20px;border:1px solid var(--border);margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:14px;font-size:14px;resize:none;font-family:inherit;background:#fff;min-height:80px}
+textarea:focus{outline:none;border-color:#d4c4e0;box-shadow:0 0 0 3px rgba(212,196,224,0.3)}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.slider-row:last-child{margin-bottom:0}
+.slider-row label{width:48px;font-size:14px;font-weight:500;color:var(--text)}
+.slider-row input[type=range]{flex:1;height:6px;-webkit-appearance:none;background:linear-gradient(90deg,#fce8ec 0%,#f4a8b8 100%);border-radius:3px;outline:none}
+.slider-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#fff;border:2px solid #f4a8b8;border-radius:50%;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.slider-row span{width:28px;text-align:right;font-size:16px;font-weight:700;color:#e88aa0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:6px 12px;border-radius:20px;font-size:13px;border:1px solid var(--border);cursor:pointer;background:#fff;transition:all 0.2s;font-weight:500}
+.chip:hover{border-color:#c4a8d8;color:#a88bc4}
+.chip.on{background:linear-gradient(135deg,#c4a8d8 0%,#d4b8e8 100%);color:#fff;border-color:#c4a8d8}
+.chip.custom-chip{background:var(--accent-light);color:var(--accent);border-color:var(--accent-light)}
+select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;font-family:inherit;margin-bottom:12px}
+select:focus{outline:none;border-color:#d4c4e0}
+.save-btn{width:100%;padding:16px 24px;background:#d8788c;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 6px 20px rgba(216,120,140,0.35),0 2px 4px rgba(0,0,0,0.1),inset 0 -2px 0 rgba(0,0,0,0.1);margin-top:8px;text-shadow:0 1px 1px rgba(0,0,0,0.15);letter-spacing:0.5px}
+.save-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(244,168,184,0.45)}
+.save-btn.saved{background:linear-gradient(135deg,#d4a5b0 0%,#e8c4cc 100%);box-shadow:0 4px 12px rgba(212,165,176,0.3)}
+.ai-chat{margin-top:0;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:16px;padding:16px;border:1px solid #ffe4c4;box-shadow:0 2px 12px rgba(255,200,150,0.1)}
+.ai-chat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ai-chat-header h4{font-size:14px;color:#e89b6a;display:flex;align-items:center;gap:6px;font-weight:700}
+.ai-chat-messages{max-height:220px;overflow-y:auto;margin-bottom:10px;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--border)}
+.ai-msg{background:#f8f9fa;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:13px;line-height:1.6}
+.ai-msg.ai{background:#fff5f7;border-radius:12px 12px 12px 4px;border-left:3px solid var(--accent)}
+.ai-msg.ai h1,.ai-msg.ai h2,.ai-msg.ai h3{margin:8px 0 6px;font-size:14px;color:var(--accent)}
+.ai-msg.ai strong{color:var(--accent);font-weight:600}
+.ai-msg.ai em{font-style:italic;color:#666}
+.ai-msg.ai code{background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;font-family:monospace}
+.ai-msg.ai pre.code-block{background:#f8f8f8;padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0}
+.ai-msg.ai pre.code-block code{background:none;padding:0}
+.ai-msg.ai blockquote{border-left:3px solid var(--accent);margin:8px 0;padding-left:10px;color:#666;font-style:italic}
+.ai-msg.ai ul{margin:6px 0;padding-left:20px}
+.ai-msg.ai li{margin:3px 0}
+.ai-msg.ai a{color:var(--accent);text-decoration:underline}
+.ai-msg.ai del{color:#999}
+.ai-msg.ai hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+.ai-msg.user{background:var(--accent-light);border-radius:12px 12px 4px 12px}
+.ai-thinking{margin-bottom:8px}
+.ai-thinking summary{cursor:pointer;color:var(--muted);font-size:11px;padding:4px 8px;background:#f5f5f5;border-radius:6px}
+.ai-thinking .thinking-content{font-size:11px;color:#666;padding:8px;margin-top:4px;background:#fafafa;border-radius:6px;font-style:italic}
+.ai-input-row{display:flex;gap:8px}
+.ai-input-row input{flex:1;padding:10px 14px;border:2px solid var(--border);border-radius:20px;font-size:13px;font-family:inherit;background:#fff}
+.ai-input-row input:focus{outline:none;border-color:var(--accent)}
+.ai-input-row button{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
+.ai-input-row button:disabled{opacity:.6}
+.collapsible-card{background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);padding:10px 12px;font-size:12px}
+.collapsible-card summary{cursor:pointer;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px;list-style:none}
+.collapsible-card summary::-webkit-details-marker{display:none}
+.collapsible-card[open] summary{margin-bottom:8px}
+.collapsible-card[open]{padding-bottom:12px}
+.empty-state{text-align:center;color:var(--muted);padding:30px 16px;font-size:12px}
+.empty-state-new{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 20px;text-align:center}
+.empty-state-new-icon{font-size:48px;margin-bottom:16px;opacity:0.6}
+.empty-state-new-text{font-size:15px;line-height:1.6;color:#fff;opacity:0.9}
+#page-calendar{flex-direction:row}
+#page-calendar .cal-panel{width:55%}
+.detail-panel{width:45%;background:var(--surface);border-left:1px solid var(--border);padding:16px;overflow-y:auto}
+.detail-panel h3{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--text)}
+.detail-empty{text-align:center;color:var(--muted);padding:50px 16px;font-size:12px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.detail-row .label{color:var(--muted)}
+.detail-row .value{font-weight:600;color:var(--text)}
+#page-analysis{flex-direction:column;padding:14px;overflow-y:auto;gap:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--border)}
+.stat-card .num{font-size:20px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:12px;border:1px solid var(--border)}
+.chart-card h3{font-size:12px;font-weight:600;margin-bottom:8px}
+.pattern-item{padding:12px;border-radius:8px;background:#fff;margin-bottom:10px;border:1px solid var(--border)}
+.pattern-item.highlight{background:var(--accent-light);border-color:var(--accent)}
+.pattern-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pattern-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.pattern-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:#fff;border:1px solid var(--border);margin-right:4px;margin-top:4px}
+.pattern-tag.personal{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pattern-tag.science{background:#f39c12;color:#fff;border-color:#f39c12}
+.pattern-compare{display:flex;gap:8px;margin-top:8px;font-size:11px}
+.pattern-compare-item{flex:1;padding:6px;border-radius:6px;background:#f8f9fa;text-align:center}
+.pattern-compare-item .label{color:var(--muted);font-size:10px}
+.pattern-compare-item .value{font-weight:600;color:var(--text)}
+.pattern-compare-item.diff{color:var(--accent)}
+canvas{width:100%!important}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-box{background:var(--surface);border-radius:14px;padding:20px;width:300px;max-width:85vw}
+.modal-box h3{font-size:14px;font-weight:700;margin-bottom:14px}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.form-row input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit}
+.form-row input:focus{outline:none;border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-btns button{flex:1;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none}
+.btn-cancel{background:var(--bg);color:var(--muted)}
+.btn-save{background:var(--accent);color:#fff}
+@media(max-width:700px){
+  #page-record,#page-calendar{flex-direction:column}
+  .cal-panel,.rec-panel,.detail-panel{width:100%;height:auto}
+  .rec-panel,.detail-panel{border-left:none;border-top:1px solid var(--border)}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Surf My Cycle</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('record',this)">记录</button>
+    <button class="tab" onclick="showPage('analysis',this)">分析</button>
+  </div>
+  <button class="tab" onclick="openSettings()" style="margin-left:8px">设置</button>
+</header>
+
+<div id="page-record" class="page active">
+  <div class="cal-panel">
+    <div class="cal-nav">
+      <button onclick="prevMonth('r')">上月</button>
+      <h3 id="r-month-title"></h3>
+      <button onclick="nextMonth('r')">下月</button>
+    </div>
+    <div class="cal-grid" id="r-grid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:rgba(231,76,60,0.2)"></div>月经期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(243,156,18,0.2)"></div>卵泡期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(233,30,99,0.2)"></div>排卵期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(155,89,182,0.2)"></div>黄体期</div>
+    </div>
+  </div>
+  <div class="rec-panel" id="rec-panel">
+    <div class="rec-date-info" id="rec-header">
+      <div class="empty-state-new">
+        <div class="empty-state-new-icon">📅</div>
+        <div class="empty-state-new-text">点击日历中的日期<br>开始记录你的周期</div>
+      </div>
+    </div>
+    <div id="rec-form" style="display:none;flex-direction:column;padding:16px">
+      
+      <!-- 时间段选择器 -->
+      <div class="time-tabs">
+        <div class="time-tab active" data-time="morning" onclick="selectTimeSlot(this)">🌅 早上</div>
+        <div class="time-tab" data-time="afternoon" onclick="selectTimeSlot(this)">☀️ 下午</div>
+        <div class="time-tab" data-time="evening" onclick="selectTimeSlot(this)">🌙 晚上</div>
+      </div>
+      
+      <!-- AI聊天区域 -->
+      <div class="ai-chat" id="ai-chat" style="margin-bottom:20px">
+        <div class="ai-chat-header">
+          <h4>🍃 和叶子聊聊</h4>
+        </div>
+        <div class="ai-chat-messages" id="ai-messages"></div>
+        <div class="ai-input-row">
+          <input type="text" id="ai-input" placeholder="告诉叶子你的感受..." onkeypress="if(event.key==='Enter')sendAI()">
+          <button onclick="sendAI()" id="ai-send-btn">发送</button>
+        </div>
+      </div>
+      
+      <!-- 笔记区域 -->
+      <div class="card" style="padding:16px 20px;margin-bottom:20px">
+        <div class="card-title" style="font-size:13px;color:var(--muted);margin-bottom:10px">📝 Summary</div>
+        <textarea id="rec-note" rows="2" placeholder="记录这个时段的感受、想法或发生的事情..." style="border:none;padding:0;font-size:14px;min-height:60px"></textarea>
+      </div>
+      
+      <!-- 状态评分 -->
+      <div class="card">
+        <div class="card-title">📊 状态评分</div>
+        <div id="score-benchmark"></div>
+        <div class="slider-row">
+          <label>心情</label>
+          <input type="range" id="s-mood" min="1" max="10" value="5" oninput="document.getElementById('v-mood').textContent=this.value">
+          <span id="v-mood">5</span>
+        </div>
+        <div class="slider-row">
+          <label>能量</label>
+          <input type="range" id="s-energy" min="1" max="10" value="5" oninput="document.getElementById('v-energy').textContent=this.value">
+          <span id="v-energy">5</span>
+        </div>
+        <div class="slider-row">
+          <label>效率</label>
+          <input type="range" id="s-focus" min="1" max="10" value="5" oninput="document.getElementById('v-focus').textContent=this.value">
+          <span id="v-focus">5</span>
+        </div>
+        <div class="slider-row">
+          <label>社交</label>
+          <input type="range" id="s-social" min="1" max="10" value="5" oninput="document.getElementById('v-social').textContent=this.value">
+          <span id="v-social">5</span>
+        </div>
+        <div class="slider-row">
+          <label>食欲</label>
+          <input type="range" id="s-appetite" min="1" max="10" value="5" oninput="document.getElementById('v-appetite').textContent=this.value">
+          <span id="v-appetite">5</span>
+        </div>
+      </div>
+      
+      <!-- 饮食提醒 -->
+      <div id="diet-intervention"></div>
+      
+      <!-- 标签和生理期 -->
+      <div class="card">
+        <div class="card-title">🏷️ 标签 & 生理期</div>
+        <select id="rec-period">
+          <option value="">无月经</option>
+          <option value="light">月经轻量</option>
+          <option value="medium">月经中量</option>
+          <option value="heavy">月经大量</option>
+          <option value="spotting">点滴出血</option>
+        </select>
+        <div id="recommended-chips"></div>
+        <div class="chips" id="custom-chips">
+          <div class="chip" onclick="toggleChip(this)">甜食</div>
+          <div class="chip" onclick="toggleChip(this)">咸味</div>
+          <div class="chip" onclick="toggleChip(this)">碳水</div>
+          <div class="chip" onclick="toggleChip(this)">蛋白质</div>
+          <div class="chip" onclick="toggleChip(this)">辛辣</div>
+          <div class="chip" onclick="toggleChip(this)">冷饮</div>
+          <div class="chip" onclick="toggleChip(this)">情绪化</div>
+          <div class="chip" onclick="toggleChip(this)">专注</div>
+          <div class="chip" onclick="toggleChip(this)">创意</div>
+          <div class="chip" onclick="toggleChip(this)">理性</div>
+          <div class="chip" onclick="toggleChip(this)">躁动</div>
+          <div class="chip" onclick="toggleChip(this)">平静</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="new-chip-input" placeholder="输入新标签..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px" onkeypress="if(event.key==='Enter')addNewChip()">
+          <button onclick="addNewChip()" style="padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">+ 添加</button>
+        </div>
+      </div>
+      
+      <button class="save-btn" onclick="saveRecord()">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-analysis" class="page">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num" id="stat-days">0</div><div class="lbl">累计记录天数</div></div>
+    <div class="stat-card"><div class="num" id="stat-mood">-</div><div class="lbl">平均心情</div></div>
+    <div class="stat-card"><div class="num" id="stat-streak">0</div><div class="lbl">连续记录天数</div></div>
+  </div>
+  
+  <!-- 个性化模式分析 -->
+  <div class="chart-card" style="background:linear-gradient(135deg,#fff5f7 0%,#fff 100%);border:2px solid var(--accent)">
+    <h3 style="color:var(--accent);display:flex;align-items:center;gap:8px">
+      <span>✨</span> 你的独特模式
+      <span style="font-size:11px;font-weight:400;color:var(--muted)">基于科学基线 + 你的实际数据</span>
+    </h3>
+    <div id="personal-pattern-analysis" style="margin-top:12px">
+      <div class="empty-state" style="padding:20px">记录至少一个完整周期后，将生成你的个性化分析...</div>
+    </div>
+  </div>
+  
+  <!-- 周期流程图 -->
+  <div class="chart-card">
+    <h3>📈 月经周期能量流转图</h3>
+    <div class="mermaid-container" style="text-align:center;padding:10px;overflow-x:auto">
+      <pre class="mermaid">
+flowchart LR
+    subgraph A[月经期 1-5天]
+        direction TB
+        A1[雌孕激素低谷]
+        A2[身体修复]
+        A3[允许休息]
+    end
+    
+    subgraph B[卵泡期 6-13天]
+        direction TB
+        B1[雌激素上升]
+        B2[精力回升]
+        B3[适合挑战]
+    end
+    
+    subgraph C[排卵期 14-16天]
+        direction TB
+        C1[激素峰值]
+        C2[能量最高]
+        C3[状态最佳]
+    end
+    
+    subgraph D[黄体期 17-28天]
+        direction TB
+        D1[孕激素升高]
+        D2[易疲劳]
+        D3[注意营养]
+    end
+    
+    A -->|Day 6| B
+    B -->|Day 14| C
+    C -->|Day 17| D
+    D -->|Day 1| A
+    
+    style A fill:#e74c3c,stroke:#c0392b,color:#fff
+    style B fill:#f39c12,stroke:#d68910,color:#fff
+    style C fill:#e91e63,stroke:#c2185b,color:#fff
+    style D fill:#9b59b6,stroke:#7d3c98,color:#fff
+      </pre>
+    </div>
+  </div>
+  
+  <div class="chart-card"><h3>最近30天 心情与能量趋势</h3><canvas id="trend-chart" height="180"></canvas></div>
+  <div class="chart-card"><h3>各周期阶段平均评分</h3><canvas id="phase-chart" height="180"></canvas></div>
+</div>
+
+<div class="modal" id="settings-modal">
+  <div class="modal-box">
+    <h3>周期设置</h3>
+    <div class="form-row"><label>上次月经开始日期</label><input type="date" id="cfg-last-period"></div>
+    <div class="form-row"><label>周期长度（天）</label><input type="number" id="cfg-cycle-len" value="28" min="21" max="45"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <h3>AI伴侣设置</h3>
+    <div class="form-row"><label>AI模型</label><select id="cfg-model"><option value="MiniMax-M2.7">MiniMax-M2.7（最强）</option><option value="MiniMax-M2.7-highspeed">MiniMax-M2.7 快速版</option><option value="MiniMax-M2.5">MiniMax-M2.5（平衡）</option><option value="MiniMax-M2">MiniMax-M2（轻量）</option></select></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeSettings()">取消</button><button class="btn-save" onclick="saveSettings()">保存</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+// 初始化 Mermaid
+mermaid.initialize({ startOnLoad: true, theme: 'default' });
+/* ============================================================
+ * 🧩 模块1: 配置与常量 (CONFIG)
+ * 全局配置、常量定义、API密钥
+ * ============================================================ */
+
+// Supabase REST API 直连（无需CDN库）
+const SUPABASE_URL = 'https://nslmawgeyaazawefajlq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zbG1hd2dleWFhemF3ZWZhamxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjU0OTUsImV4cCI6MjA5MDMwMTQ5NX0.5ubSYgpX-bFxte7YYNGazjcbqNM2n67tTxrbGwcRjIc';
+const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+async function sbGet(table, params, retries = 2) {
+  const q = Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + q, { headers: SB_HEADERS });
+      if (r.ok) return r.json();
+      if (i === retries) {
+        console.error('sbGet failed after', retries, 'retries:', r.status);
+        return [];
+      }
+    } catch (e) {
+      if (i === retries) {
+        console.error('sbGet error after retries:', e);
+        return [];
+      }
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return [];
+}
+async function sbUpsert(table, body, retries = 2) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+        method: 'POST', headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(body)
+      });
+      if (r.ok) return true;
+      const errorText = await r.text();
+      console.error('sbUpsert error:', r.status, errorText);
+      if (i === retries) {
+        return false;
+      }
+    } catch (e) {
+      console.error('sbUpsert exception:', e);
+      if (i === retries) {
+        return false;
+      }
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return false;
+}
+async function sbDelete(table, params) {
+  const q = Object.entries(params).map(([k,v]) => k + '=eq.' + encodeURIComponent(v)).join('&');
+  await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + q, { method: 'DELETE', headers: SB_HEADERS });
+}
+
+let currentUserId = 'default_user'; // 可以用localStorage存储用户ID
+
+const TIME_SLOTS = {
+  morning: { name: '早上', color: '#3498db' },
+  afternoon: { name: '下午', color: '#f39c12' },
+  evening: { name: '晚上', color: '#9b59b6' }
+};
+
+// 配置缓存（同步版本使用）
+let configCache = null;
+
+/* ============================================================
+ * 🧩 模块2: 数据层 (DATA_LAYER)
+ * Supabase/LocalStorage 数据操作、导入导出
+ * ============================================================ */
+
+// 数据操作
+async function getData() {
+  // 尝试从Supabase读取
+  const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
+  if (Array.isArray(rows) && rows.length > 0) {
+    return rows.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  // 降级到localStorage
+  return getDataLegacy();
+}
+async function getRecord(dateStr) {
+  // 尝试从Supabase读取
+  const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + dateStr, 'select': '*' });
+  if (rows && rows[0]) return rows[0];
+  // 降级到localStorage
+  return getRecordLegacy(dateStr);
+}
+async function setData(arr) {
+  // 危险操作：批量替换，建议改用 saveRecordDB 单条保存
+  console.warn('setData: 批量替换数据，可能导致数据丢失');
+  await sbDelete('records', { user_id: currentUserId });
+  for (const item of arr) {
+    await sbUpsert('records', { ...item, user_id: currentUserId });
+  }
+}
+async function getConfig() {
+  const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
+  return (rows && rows[0]) ? (rows[0].value || {}) : {};
+}
+async function setConfig(cfg) {
+  // 先读取现有配置，合并后再保存
+  const existing = await getConfig();
+  const merged = { ...existing, ...cfg, updated_at: new Date().toISOString() };
+  await sbUpsert('config', { user_id: currentUserId, value: merged });
+}
+async function getRecord(dateStr) {
+  const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + dateStr, 'select': '*' });
+  return (rows && rows[0]) ? rows[0] : null;
+}
+async function saveRecordDB(record) {
+  // 先保存到本地备份
+  localStorage.setItem('smc_record_' + record.date, JSON.stringify(record));
+  
+  // 尝试Supabase
+  const result = await sbUpsert('records', { ...record, user_id: currentUserId });
+  if (!result) {
+    console.warn('Supabase保存失败，降级到localStorage');
+    // 降级到localStorage
+    const allData = getDataLegacy();
+    const idx = allData.findIndex(d => d.date === record.date);
+    if (idx >= 0) {
+      allData[idx] = record;
+    } else {
+      allData.push(record);
+    }
+    localStorage.setItem('smc_data', JSON.stringify(allData));
+    return 'local'; // 返回local表示使用了本地存储
+  }
+  return 'supabase';
+}
+async function getAIConversation(dateStr) {
+  const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + dateStr, 'select': '*' });
+  return (rows && rows[0]) ? (rows[0].messages || []) : [];
+}
+async function saveAIConversation(dateStr, messages) {
+  // 先删除再插入（Supabase upsert有问题时 workaround）
+  await sbDelete('conversations', { user_id: currentUserId, date: dateStr });
+  await sbUpsert('conversations', { user_id: currentUserId, date: dateStr, messages });
+}
+async function getMemory(key) {
+  const rows = await sbGet('memory', { 'user_id': 'eq.' + currentUserId, 'key': 'eq.' + key, 'select': '*' });
+  return (rows && rows[0]) ? (rows[0].value || '') : '';
+}
+async function setMemory(key, value) {
+  await sbUpsert('memory', { user_id: currentUserId, key, value });
+}
+
+// 导出数据
+async function exportData() {
+  const records = await getData();
+  const convData = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
+  const config = await getConfig();
+  const memory = await getMemory('longterm');
+  
+  const data = {
+    exportTime: new Date().toISOString(),
+    version: '1.0',
+    records,
+    conversations: Array.isArray(convData) ? convData : [],
+    config,
+    memory
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'surf-my-cycle-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 导入数据
+async function importData(jsonStr) {
+  const data = JSON.parse(jsonStr);
+  if (data.records) await setData(data.records);
+  if (data.conversations) {
+    for (const item of data.conversations) {
+      await saveAIConversation(item.date, item.messages);
+    }
+  }
+  if (data.config) await setConfig(data.config);
+  if (data.memory) await setMemory('longterm', data.memory);
+  return true;
+}
+
+// 兼容旧版localStorage（迁移用）
+function getDataLegacy() { try { return JSON.parse(localStorage.getItem('smc_data') || '[]'); } catch(e) { return []; } }
+function getConfigLegacy() { try { return JSON.parse(localStorage.getItem('smc_config') || '{}'); } catch(e) { return {}; } }
+function getRecordLegacy(dateStr) { return getDataLegacy().find(d => d.date === dateStr) || null; }
+
+// 从旧IndexedDB读取数据（迁移用）
+function readFromIndexedDB() {
+  return new Promise(resolve => {
+    const result = { records: [], config: {} };
+    try {
+      const req = indexedDB.open('surf-my-cycle', 1);
+      req.onerror = () => resolve(result);
+      req.onupgradeneeded = () => resolve(result); // DB不存在
+      req.onsuccess = e => {
+        const db = e.target.result;
+        const stores = Array.from(db.objectStoreNames);
+        if (!stores.includes('records')) { db.close(); resolve(result); return; }
+        const tx = db.transaction(['records', 'config'], 'readonly');
+        const recReq = tx.objectStore('records').getAll();
+        recReq.onsuccess = re => { result.records = re.target.result || []; };
+        const cfgReq = tx.objectStore('config').get('settings');
+        cfgReq.onsuccess = ce => { result.config = (ce.target.result && ce.target.result.value) || {}; };
+        tx.oncomplete = () => { db.close(); resolve(result); };
+        tx.onerror = () => { db.close(); resolve(result); };
+      };
+    } catch(e) { resolve(result); }
+  });
+}
+
+/* ============================================================
+ * 🧩 模块3: 周期计算 (CYCLE_MATH)
+ * 周期天数计算、阶段判断
+ * ============================================================ */
+
+async function getCycleDay(dateStr) {
+  if (!configCache) configCache = await getConfig();
+  const cfg = configCache;
+  if (!cfg.lastPeriod) return null;
+  const last = new Date(cfg.lastPeriod + 'T00:00:00');
+  const target = new Date(dateStr + 'T00:00:00');
+  const cycleLen = cfg.cycleLen || 28;
+  let diff = Math.round((target - last) / 86400000);
+  if (diff < 0) diff = ((diff % cycleLen) + cycleLen) % cycleLen;
+  return (diff % cycleLen) + 1;
+}
+
+function getPhase(day) {
+  if (!day) return null;
+  if (day >= 1 && day <= 5) return { name:'月经期', color:'#e74c3c', tip:'雌孕激素低谷，身体修复中，允许自己休息' };
+  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#f39c12', tip:'雌激素逐渐上升，精力和专注力开始回升' };
+  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#e91e63', tip:'雌激素+雄激素高峰，性欲和创造力峰值，状态最佳' };
+  if (day >= 17 && day <= 21) return { name:'黄体期早期', color:'#9b59b6', tip:'孕激素升高，适合细致整理类工作' };
+  if (day >= 22 && day <= 28) return { name:'黄体期晚期', color:'#7d3c98', tip:'雌激素下降期，易疲劳情绪波动，对自己温柔点' };
+  return null;
+}
+
+const rState = { 
+  year: new Date().getFullYear(), 
+  month: new Date().getMonth(), 
+  selected: new Date().toLocaleDateString('en-CA')
+};
+let currentTimeSlot = 'morning';
+
+/* ============================================================
+ * 🧩 模块4: UI渲染 (UI_RENDER)
+ * 日历渲染、记录面板、页面切换
+ * ============================================================ */
+
+async function renderCalendar(gridId, titleId, state, onClickDay) {
+  const grid = document.getElementById(gridId);
+  const title = document.getElementById(titleId);
+  if (!grid || !title) return;
+
+  const { year, month } = state;
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  title.textContent = year + '年 ' + monthNames[month];
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toLocaleDateString('en-CA');
+  const data = await getData();
+
+  let html = '';
+  ['日','一','二','三','四','五','六'].forEach(d => { html += '<div class="cal-head">' + d + '</div>'; });
+
+  const prevDays = new Date(year, month, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += '<div class="cal-day other-month"><span>' + (prevDays - i) + '</span></div>';
+  }
+
+  const phaseNames = ['月经期','卵泡期','排卵期','黄体期'];
+  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6'];
+  
+  // 预先获取配置以避免循环中多次调用
+  let cfg = configCache;
+  if (!cfg) {
+    cfg = await getConfig();
+    configCache = cfg;
+  }
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const rec = data.find(r => r.date === ds);
+    
+    // 同步计算cycleDay
+    let cycleDay = null;
+    if (cfg.lastPeriod) {
+      const last = new Date(cfg.lastPeriod + 'T00:00:00');
+      const target = new Date(ds + 'T00:00:00');
+      const cycleLen = cfg.cycleLen || 28;
+      let diff = Math.round((target - last) / 86400000);
+      if (diff < 0) diff = ((diff % cycleLen) + cycleLen) % cycleLen;
+      cycleDay = (diff % cycleLen) + 1;
+    }
+    
+    const phase = getPhase(cycleDay);
+
+    let cls = 'cal-day';
+    if (ds === today) cls += ' today';
+    if (rec && rec.slots && Object.keys(rec.slots).length > 0) cls += ' has-data';
+    if (state.selected === ds) cls += ' selected';
+    
+    // 添加周期阶段背景色类名
+    if (phase) {
+      const phaseClassMap = {
+        '月经期': 'phase-menstrual',
+        '卵泡期': 'phase-follicular',
+        '排卵期': 'phase-ovulation',
+        '黄体期': 'phase-luteal'
+      };
+      cls += ' ' + phaseClassMap[phase.name];
+    }
+
+    let dots = '';
+    if (rec && rec.slots) {
+      const emojis = [];
+      Object.keys(rec.slots).forEach(slot => {
+        if (rec.slots[slot] && rec.slots[slot].mood) {
+          const emoji = slot === 'morning' ? '🌅' : slot === 'afternoon' ? '☀️' : slot === 'evening' ? '🌙' : '●';
+          emojis.push(emoji);
+        }
+      });
+      if (emojis.length > 0) {
+        dots = '<div class="time-emoji-row">' + emojis.map(e => '<span class="time-emoji">' + e + '</span>').join('') + '</div>';
+      }
+    }
+    html += '<div class="' + cls + '" data-date="' + ds + '">' + dots + '<span>' + d + '</span></div>';
+  }
+
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    html += '<div class="cal-day other-month"><span>' + d + '</span></div>';
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-day[data-date]').forEach(el => {
+    el.addEventListener('click', () => {
+      const ds = el.getAttribute('data-date');
+      state.selected = ds;
+      renderCalendar(gridId, titleId, state, onClickDay);
+      onClickDay(ds);
+    });
+  });
+}
+
+function prevMonth(which) {
+  const s = rState;
+  s.month--;
+  if (s.month < 0) { s.month = 11; s.year--; }
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+function nextMonth(which) {
+  const s = rState;
+  s.month++;
+  if (s.month > 11) { s.month = 0; s.year++; }
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+
+let currentRecDate = null;
+
+function selectTimeSlot(el) {
+  currentTimeSlot = el.getAttribute('data-time');
+  document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadRecordPanel(currentRecDate);
+}
+
+async function loadRecordPanel(dateStr) {
+  currentRecDate = dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  const weekNames = ['日','一','二','三','四','五','六'];
+  const label = (d.getMonth()+1) + '月' + d.getDate() + '日 周' + weekNames[d.getDay()];
+  const cycleDay = await getCycleDay(dateStr);
+  const phase = getPhase(cycleDay);
+
+  let headerHtml = '<h2>' + label + '</h2>';
+  if (cycleDay) {
+    headerHtml += '<div>Day ' + cycleDay + (phase ? ' · <span class="phase-tag" style="background:' + phase.color + '">' + phase.name + '</span>' : '') + '</div>';
+    if (phase) headerHtml += '<div class="tip">' + phase.tip + '</div>';
+    // 添加周期智能提示
+    headerHtml += renderCycleInsight(cycleDay, phase?.name);
+  }
+  document.getElementById('rec-header').innerHTML = headerHtml;
+  document.getElementById('rec-form').style.display = 'flex';
+
+  const rec = await getRecord(dateStr);
+  const slot = rec && rec.slots ? (rec.slots[currentTimeSlot] || {}) : {};
+  document.getElementById('rec-note').value = slot.note || '';
+  ['mood','energy','focus','social','appetite'].forEach(k => {
+    const val = slot[k] || 5;
+    document.getElementById('s-' + k).value = val;
+    document.getElementById('v-' + k).textContent = val;
+  });
+  document.getElementById('rec-period').value = rec ? (rec.period || '') : '';
+  // 从当前时间段读取chips
+  const slotChips = slot.chips || [];
+  document.querySelectorAll('#rec-form .chip').forEach(c => {
+    c.classList.toggle('on', slotChips.includes(c.textContent));
+  });
+
+  // 渲染周期推荐标签
+  const recommendedChipsHtml = renderRecommendedChips(cycleDay);
+  document.getElementById('recommended-chips').innerHTML = recommendedChipsHtml;
+
+  // 渲染评分基准线
+  const scoreBenchmarkHtml = renderScoreBenchmark(cycleDay);
+  document.getElementById('score-benchmark').innerHTML = scoreBenchmarkHtml;
+
+  // 渲染饮食干预提醒
+  const dietInterventionHtml = renderDietIntervention(cycleDay);
+  document.getElementById('diet-intervention').innerHTML = dietInterventionHtml;
+
+  const btn = document.querySelector('.save-btn');
+  const recSaved = rec && rec.slots && rec.slots[currentTimeSlot] && rec.slots[currentTimeSlot].mood;
+  btn.classList.toggle('saved', recSaved);
+  btn.textContent = recSaved ? '更新记录' : '保存记录';
+  
+  // 加载该日期的AI对话历史
+  aiConversation = await getAIConversation(currentRecDate);
+  renderAIMessages();
+}
+
+// 轻量级 Markdown 解析器
+function parseMarkdown(text) {
+  if (!text) return '';
+  
+  let html = text
+    // 转义 HTML 特殊字符
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // 代码块
+    .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+    // 行内代码
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+    // 标题
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    // 粗体
+    .replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    // 斜体
+    .replace(/\*([^\*]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    // 删除线
+    .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+    // 引用
+    .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+    // 无序列表
+    .replace(/^- (.*$)/gim, '<li>$1</li>')
+    .replace(/^(\* )(.*$)/gim, '<li>$2</li>')
+    // 有序列表
+    .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+    // 链接
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+    // 分隔线
+    .replace(/^---$/gim, '<hr>')
+    // 换行
+    .replace(/\n/g, '<br>');
+  
+  // 包裹列表项
+  html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+  // 修复嵌套列表问题（简单处理）
+  html = html.replace(/<\/ul><ul>/g, '');
+  
+  return html;
+}
+
+function renderAIMessages() {
+  const messagesEl = document.getElementById('ai-messages');
+  messagesEl.innerHTML = '';
+  aiConversation.forEach(m => {
+    messagesEl.innerHTML += '<div class="ai-msg ' + m.role + '">' + parseMarkdown(m.content) + '</div>';
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function toggleChip(el) { el.classList.toggle('on'); }
+
+/* ============================================================
+ * 🧩 模块5: 标签管理 (CHIPS_MANAGER)
+ * 自定义标签的加载、渲染、添加、删除
+ * ============================================================ */
+
+// 自定义标签管理
+const DEFAULT_CHIPS = ['甜食','咸味','碳水','蛋白质','辛辣','冷饮','情绪化','专注','创意','理性','躁动','平静'];
+let customChips = [];
+
+function loadCustomChips() {
+  try {
+    customChips = JSON.parse(localStorage.getItem('smc_custom_chips') || '[]');
+  } catch(e) { customChips = []; }
+}
+
+function saveCustomChips() {
+  localStorage.setItem('smc_custom_chips', JSON.stringify(customChips));
+}
+
+function renderCustomChips() {
+  const container = document.getElementById('custom-chips');
+  if (!container) return;
+  
+  // 清空现有标签
+  container.innerHTML = '';
+  
+  // 渲染默认标签
+  DEFAULT_CHIPS.forEach(text => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = text;
+    chip.onclick = () => toggleChip(chip);
+    container.appendChild(chip);
+  });
+  
+  // 渲染自定义标签（带删除按钮）
+  customChips.forEach(text => {
+    const chip = document.createElement('div');
+    chip.className = 'chip custom-chip';
+    chip.dataset.custom = 'true';
+    chip.innerHTML = text + '<span class="del-chip">×</span>';
+    chip.onclick = () => toggleChip(chip);
+    
+    // 删除按钮点击事件
+    const delBtn = chip.querySelector('.del-chip');
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm('删除标签 "' + text + '"？')) {
+        deleteChip(text);
+      }
+    };
+    
+    container.appendChild(chip);
+  });
+}
+
+function addNewChip() {
+  const input = document.getElementById('new-chip-input');
+  const text = input.value.trim();
+  
+  if (!text) return;
+  
+  // 检查是否已存在（默认或自定义）
+  if (DEFAULT_CHIPS.includes(text) || customChips.includes(text)) {
+    alert('标签已存在');
+    return;
+  }
+  
+  // 添加到自定义标签
+  customChips.push(text);
+  saveCustomChips();
+  
+  // 重新渲染
+  renderCustomChips();
+  
+  // 清空输入框
+  input.value = '';
+}
+
+function deleteChip(text) {
+  customChips = customChips.filter(c => c !== text);
+  saveCustomChips();
+  renderCustomChips();
+}
+
+async function saveRecord() {
+  if (!currentRecDate) return;
+  
+  // 数据验证
+  const chips = [];
+  document.querySelectorAll('#rec-form .chip.on').forEach(c => chips.push(c.textContent));
+  
+  const mood = parseInt(document.getElementById('s-mood').value);
+  const energy = parseInt(document.getElementById('s-energy').value);
+  
+  // 验证数据有效性
+  if (isNaN(mood) || isNaN(energy) || mood < 1 || mood > 10 || energy < 1 || energy > 10) {
+    console.error('保存失败：评分数据无效');
+    alert('评分数据无效，请重试');
+    return;
+  }
+  
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '保存中...';
+  btn.disabled = true;
+  
+  try {
+    const existing = await getRecord(currentRecDate) || { date: currentRecDate, slots: {} };
+    if (!existing.slots) existing.slots = {};
+    
+    existing.slots[currentTimeSlot] = {
+      note: document.getElementById('rec-note').value,
+      mood: mood,
+      energy: energy,
+      focus: parseInt(document.getElementById('s-focus').value) || 5,
+      social: parseInt(document.getElementById('s-social').value) || 5,
+      appetite: parseInt(document.getElementById('s-appetite').value) || 5,
+      saved_at: new Date().toISOString(),
+      chips: chips
+    };
+    existing.period = document.getElementById('rec-period').value;
+    // 暂时不发送 updated_at，兼容旧表结构
+    
+    // 先保存本地备份
+    localStorage.setItem('smc_backup_' + currentRecDate + '_' + currentTimeSlot, JSON.stringify(existing.slots[currentTimeSlot]));
+    
+    const result = await saveRecordDB(existing);
+    
+    renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+    btn.classList.add('saved');
+    
+    if (result === 'local') {
+      btn.textContent = '已保存到本地';
+      // 显示降级提示
+      const tipDiv = document.createElement('div');
+      tipDiv.style.cssText = 'color:#f39c12;font-size:11px;margin-top:6px;padding:6px;background:#fff3cd;border-radius:6px;';
+      tipDiv.textContent = '⚠️ 当前使用本地存储，数据不会同步到云端';
+      btn.parentNode.insertBefore(tipDiv, btn.nextSibling);
+      setTimeout(() => tipDiv.remove(), 5000);
+    } else {
+      btn.textContent = '已保存';
+    }
+    
+    setTimeout(() => { 
+      btn.textContent = '更新记录';
+    }, 1500);
+  } catch (e) {
+    console.error('保存失败:', e);
+    btn.textContent = '保存失败，请重试';
+    // 显示详细错误到页面
+    const errorDiv = document.getElementById('save-error-msg') || document.createElement('div');
+    errorDiv.id = 'save-error-msg';
+    errorDiv.style.cssText = 'color:#e84a6a;font-size:12px;margin-top:8px;padding:8px;background:#fce4ea;border-radius:8px;';
+    errorDiv.textContent = '错误: ' + (e.message || 'Supabase连接失败');
+    btn.parentNode.insertBefore(errorDiv, btn.nextSibling);
+    setTimeout(() => errorDiv.remove(), 10000);
+    // 从本地备份恢复提示
+    const backup = localStorage.getItem('smc_backup_' + currentRecDate + '_' + currentTimeSlot);
+    if (backup) {
+      console.log('本地备份可用:', backup);
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 获取近期AI对话摘要 - 增强版，包含最近3天的详细记录
+async function getRecentContext(currentDate) {
+  const context = {
+    last_3_days: [],
+    weekly_pattern: '',
+    user_patterns: {}
+  };
+  
+  const current = new Date(currentDate);
+  
+  // 获取最近3天的详细记录
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(current);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    
+    // 获取当天的记录数据
+    const record = await getRecord(dateStr);
+    const conv = await getAIConversation(dateStr);
+    
+    if (record || (conv && conv.length > 0)) {
+      const cycleDay = await getCycleDay(dateStr);
+      const phase = getPhase(cycleDay);
+      
+      const dayContext = {
+        date: dateStr,
+        cycle_day: cycleDay,
+        phase: phase ? phase.name : '未知',
+        
+        // 评分数据（所有时间段）
+        scores: {},
+        
+        // 文字记录（关键！包含用户的notes）
+        notes: {},
+        
+        // AI对话摘要（关键！）
+        ai_conversation_summary: '',
+        
+        // 标签
+        chips: [],
+        
+        // 周期状态
+        period: record ? record.period : null
+      };
+      
+      // 提取所有时间段的评分和notes
+      if (record && record.slots) {
+        ['morning', 'afternoon', 'evening'].forEach(slot => {
+          if (record.slots[slot]) {
+            const s = record.slots[slot];
+            dayContext.scores[slot] = {
+              mood: s.mood || 5,
+              energy: s.energy || 5,
+              focus: s.focus || 5,
+              social: s.social || 5,
+              appetite: s.appetite || 5
+            };
+            if (s.note) {
+              dayContext.notes[slot] = s.note;
+            }
+            if (s.chips) {
+              dayContext.chips = [...new Set([...dayContext.chips, ...s.chips])];
+            }
+          }
+        });
+      }
+      
+      // 生成AI对话摘要（不只是截取，而是提取关键信息）
+      if (conv && conv.length > 0) {
+        const userMsgs = conv.filter(m => m.role === 'user').map(m => m.content);
+        const aiMsgs = conv.filter(m => m.role === 'assistant').map(m => m.content);
+        
+        if (userMsgs.length > 0) {
+          // 提取对话主题和关键信息
+          const topics = extractTopics(userMsgs.join(' '));
+          const concerns = extractConcerns(userMsgs.join(' '));
+          
+          dayContext.ai_conversation_summary = {
+            topics: topics,
+            concerns: concerns,
+            user_main_message: userMsgs[0].substring(0, 100),
+            ai_key_advice: aiMsgs[0] ? aiMsgs[0].substring(0, 80) : ''
+          };
+        }
+      }
+      
+      context.last_3_days.push(dayContext);
+    }
+  }
+  
+  // 生成本周趋势摘要
+  if (context.last_3_days.length > 0) {
+    context.weekly_pattern = generateWeeklyPattern(context.last_3_days);
+  }
+  
+  return context;
+}
+
+// 从对话文本中提取主题
+function extractTopics(text) {
+  const keywords = {
+    '精力': ['精力', '能量', '累', '疲惫', '精神'],
+    '情绪': ['情绪', '心情', '焦虑', '烦躁', '开心', '低落'],
+    '睡眠': ['睡眠', '失眠', '困', '睡不好'],
+    '饮食': ['饮食', '食欲', '想吃', '暴食', ' hungry'],
+    '工作': ['工作', '效率', '专注', '拖延', '任务'],
+    '运动': ['运动', '健身', '锻炼', '瑜伽'],
+    '社交': ['社交', '朋友', '聚会', '聊天', '见'],
+    '经期': ['月经', '痛经', '姨妈', '出血']
+  };
+  
+  const topics = [];
+  for (const [topic, words] of Object.entries(keywords)) {
+    if (words.some(w => text.includes(w))) {
+      topics.push(topic);
+    }
+  }
+  return topics.slice(0, 3); // 最多3个主题
+}
+
+// 从对话文本中提取关注点/问题
+function extractConcerns(text) {
+  const concernPatterns = [
+    /(担心|害怕|焦虑|怎么办|正常吗|有问题)/,
+    /(为什么|怎么回事|什么原因)/,
+    /(如何|怎么|怎样).*?(改善|缓解|解决)/,
+    /(痛|难受|不舒服|恶心)/
+  ];
+  
+  const concerns = [];
+  concernPatterns.forEach(pattern => {
+    const match = text.match(pattern);
+    if (match) {
+      concerns.push(match[0]);
+    }
+  });
+  return concerns.slice(0, 2);
+}
+
+// 根据对话生成第三人称状态描述
+function generateStateDescription(userMsg, aiReply, scores) {
+  const msg = userMsg.toLowerCase();
+  
+  // 根据关键词判断状态
+  const states = {
+    '累': '有点疲惫',
+    '困': '犯困',
+    '精神': '精神状态不错',
+    '好': '感觉挺好的',
+    '不错': '状态在线',
+    '忙': '工作挺忙',
+    '烦': '有些烦躁',
+    '焦虑': '有点焦虑',
+    '开心': '心情不错',
+    '难过': '情绪有点低落',
+    '压力': '压力有点大',
+    '痛': '身体不太舒服',
+    '饿': '肚子饿了',
+    '吃': '食欲不错',
+    '睡': '睡眠质量一般',
+    '运动': '刚运动完',
+    '工作': '工作劲头足',
+    '懒': '想躺平',
+    '累死了': '累瘫了',
+    '糟糕': '状态不好',
+    '不爽': '情绪不太好',
+    'emo': '有点emo',
+    '兴奋': '挺兴奋的',
+    '紧张': '有些紧张',
+    '无聊': '有点无聊',
+    'productive': '效率很高',
+    '高效': '效率很高',
+    '拖延': '在拖延',
+    '专注': '很专注',
+    '分心': '有些分心',
+    '生气': '有点生气',
+    '烦躁': '心情烦躁',
+    '沮丧': '感到沮丧',
+    '失落': '有些失落',
+    '充实': '感觉很充实',
+    '轻松': '心情轻松',
+    '平静': '内心平静',
+    '活力': '充满活力',
+    '疲惫': '比较疲惫',
+    '倦怠': '有些倦怠',
+    '打鸡血': '像打了鸡血',
+    '摆烂': '想摆烂',
+    '卷': '在卷',
+    '摸鱼': '在摸鱼'
+  };
+  
+  // 找出匹配的状态
+  let matchedState = '';
+  for (const [keyword, state] of Object.entries(states)) {
+    if (msg.includes(keyword)) {
+      matchedState = state;
+      break;
+    }
+  }
+  
+  // 如果有评分，结合评分生成描述
+  if (scores) {
+    const energy = parseInt(scores.energy);
+    const mood = parseInt(scores.mood);
+    const focus = parseInt(scores.focus);
+    
+    // 高分组合
+    if (energy >= 8 && mood >= 8 && focus >= 8) {
+      return '精力充沛，心情和专注度都在线';
+    }
+    if (energy >= 8 && mood >= 8) {
+      return '精力充沛，心情很好';
+    }
+    if (energy >= 7 && mood >= 7) {
+      return '状态不错，精神头很足';
+    }
+    
+    // 低分组合
+    if (energy <= 4 && mood <= 4) {
+      return matchedState || '又累情绪又低落';
+    }
+    if (energy <= 4) {
+      return matchedState || '能量很低，需要休息';
+    }
+    if (mood <= 4) {
+      return matchedState || '情绪不太好';
+    }
+    if (focus <= 4) {
+      return '难以集中注意力';
+    }
+    
+    // 中等分数但有明确状态词
+    if (matchedState) {
+      return matchedState;
+    }
+    
+    // 中等分数无状态词 - 根据分数区间给出有意义的描述
+    if (energy >= 6 && mood >= 6) {
+      return '状态平稳，一切正常';
+    }
+    if (energy >= 6) {
+      return '精力还行，但情绪一般';
+    }
+    if (mood >= 6) {
+      return '心情还可以，但有点累';
+    }
+    return '状态一般般';
+  }
+  
+  // 无评分但有明确关键词
+  if (matchedState) {
+    return matchedState;
+  }
+  
+  // 无评分无关键词 - 返回空表示不记录
+  return '';
+}
+
+// 生成本周趋势摘要
+function generateWeeklyPattern(days) {
+  if (days.length === 0) return '';
+  
+  // 计算平均评分
+  let totalMood = 0, totalEnergy = 0, count = 0;
+  const allChips = [];
+  const allNotes = [];
+  
+  days.forEach(day => {
+    Object.values(day.scores).forEach(scores => {
+      if (scores.mood) {
+        totalMood += parseInt(scores.mood);
+        totalEnergy += parseInt(scores.energy);
+        count++;
+      }
+    });
+    allChips.push(...day.chips);
+    Object.values(day.notes).forEach(note => {
+      if (note && !note.includes('【AI对话摘要】')) {
+        allNotes.push(note.substring(0, 30));
+      }
+    });
+  });
+  
+  const avgMood = count > 0 ? Math.round(totalMood / count) : 0;
+  const avgEnergy = count > 0 ? Math.round(totalEnergy / count) : 0;
+  
+  // 统计高频标签
+  const chipCounts = {};
+  allChips.forEach(c => {
+    chipCounts[c] = (chipCounts[c] || 0) + 1;
+  });
+  const topChips = Object.entries(chipCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([c]) => c);
+  
+  // 生成趋势描述
+  let pattern = '';
+  if (avgMood >= 7 && avgEnergy >= 7) {
+    pattern = '整体状态良好，精力充沛';
+  } else if (avgMood <= 5 && avgEnergy <= 5) {
+    pattern = '近期状态偏低，可能需要更多休息';
+  } else if (avgMood >= 7) {
+    pattern = '心情不错，但精力有些波动';
+  } else {
+    pattern = '情绪有些起伏，建议关注心理状态';
+  }
+  
+  if (topChips.length > 0) {
+    pattern += `，常出现的感受：${topChips.join('、')}`;
+  }
+  
+  return pattern;
+}
+
+// 格式化上下文为文本（用于prompt）
+function formatContextForPrompt(context) {
+  if (!context.last_3_days || context.last_3_days.length === 0) {
+    return '【近期状态】暂无近期记录';
+  }
+  
+  let text = '【近期状态回顾】\n';
+  
+  context.last_3_days.forEach((day, index) => {
+    const dayName = index === 0 ? '昨天' : index === 1 ? '前天' : '大前天';
+    text += `\n${dayName}（${day.date}，${day.phase}第${day.cycle_day}天）：\n`;
+    
+    // 评分
+    const scores = Object.entries(day.scores);
+    if (scores.length > 0) {
+      const avgScores = scores.reduce((acc, [slot, s]) => {
+        acc.mood = (acc.mood || 0) + parseInt(s.mood);
+        acc.energy = (acc.energy || 0) + parseInt(s.energy);
+        return acc;
+      }, {});
+      const slotCount = scores.length;
+      text += `  平均评分：心情${Math.round(avgScores.mood/slotCount)}分，精力${Math.round(avgScores.energy/slotCount)}分\n`;
+    }
+    
+    // 文字记录（关键！）
+    const notes = Object.entries(day.notes).filter(([_, n]) => n && !n.includes('【AI对话摘要】'));
+    if (notes.length > 0) {
+      text += `  记录内容：${notes.map(([slot, n]) => {
+        const slotName = slot === 'morning' ? '早' : slot === 'afternoon' ? '下午' : '晚';
+        return `${slotName}：${n.substring(0, 40)}${n.length > 40 ? '...' : ''}`;
+      }).join('；')}\n`;
+    }
+    
+    // AI对话摘要
+    if (day.ai_conversation_summary && day.ai_conversation_summary.user_main_message) {
+      const summary = day.ai_conversation_summary;
+      text += `  AI对话：用户提到「${summary.user_main_message.substring(0, 30)}...」`;
+      if (summary.topics && summary.topics.length > 0) {
+        text += `，话题涉及${summary.topics.join('、')}`;
+      }
+      text += '\n';
+    }
+    
+    // 标签
+    if (day.chips.length > 0) {
+      text += `  标签：${day.chips.slice(0, 5).join('、')}\n`;
+    }
+    
+    // 周期状态
+    if (day.period) {
+      const periodText = {
+        'light': '月经轻量',
+        'medium': '月经中量',
+        'heavy': '月经大量',
+        'spotting': '点滴出血'
+      }[day.period];
+      text += `  生理状态：${periodText}\n`;
+    }
+  });
+  
+  // 本周趋势
+  if (context.weekly_pattern) {
+    text += `\n【本周趋势】${context.weekly_pattern}\n`;
+  }
+  
+  return text;
+}
+
+let aiConversation = [];
+
+// 上下文缓存（热重载机制）
+let contextCache = {
+  date: null,           // 缓存的日期
+  contextText: '',      // 格式化的上下文文本
+  lastUpdated: null,    // 最后更新时间
+  rawContext: null      // 原始上下文对象
+};
+
+// 获取上下文（带缓存）
+async function getCachedContext(currentDate) {
+  const now = Date.now();
+  
+  // 检查缓存是否有效（同一天，且5分钟内）
+  if (contextCache.date === currentDate && 
+      contextCache.contextText && 
+      (now - contextCache.lastUpdated) < 5 * 60 * 1000) {
+    console.log('🔄 使用缓存的上下文（热重载）');
+    return contextCache.contextText;
+  }
+  
+  // 缓存失效，重新构建
+  console.log('🆕 构建新的上下文（冷启动）');
+  const recentContext = await getRecentContext(currentDate);
+  const contextText = formatContextForPrompt(recentContext);
+  
+  // 更新缓存
+  contextCache = {
+    date: currentDate,
+    contextText: contextText,
+    lastUpdated: now,
+    rawContext: recentContext
+  };
+  
+  return contextText;
+}
+
+// 强制刷新上下文缓存（用户手动保存记录后调用）
+function invalidateContextCache() {
+  contextCache = {
+    date: null,
+    contextText: '',
+    lastUpdated: null,
+    rawContext: null
+  };
+  console.log('♻️ 上下文缓存已清除');
+}
+
+const MINIMAX_API_KEY = 'sk-cp-s0OLD9AiD0PS2QxKRvNS9QZ7h1-i_8MdMGYETPdRtFE_dlOGkL5fDyMAG0TulF3601fxe12vl9Opqu6RNT3vcgBTzBibGWlzI-Vrnsh5_jpN_NgOL3nOfrg';
+
+/* ============================================================
+ * 🧩 模块5.5: 搜索技能 (SEARCH_SKILL)
+ * 文献检索、科学数据查询
+ * ============================================================ */
+
+const TAVILY_API_KEY = 'tvly-dev-YOUR_API_KEY'; // 需要替换为实际的Tavily API key
+
+async function searchLiterature(query, options = {}) {
+  const { maxResults = 5, searchDepth = 'basic', includeDomains = [] } = options;
+  
+  try {
+    // 构建搜索查询 - 针对月经周期相关话题优化
+    const enhancedQuery = enhanceSearchQuery(query);
+    
+    const response = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + TAVILY_API_KEY
+      },
+      body: JSON.stringify({
+        query: enhancedQuery,
+        search_depth: searchDepth,
+        max_results: maxResults,
+        include_answer: true,
+        include_domains: includeDomains.length > 0 ? includeDomains : [
+          'ncbi.nlm.nih.gov',
+          'pubmed.ncbi.nlm.nih.gov',
+          'sciencedirect.com',
+          'nature.com',
+          'frontiersin.org',
+          'who.int'
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('搜索请求失败: ' + response.status);
+    }
+    
+    const data = await response.json();
+    
+    // 格式化搜索结果
+    return {
+      success: true,
+      answer: data.answer || '',
+      results: (data.results || []).map(r => ({
+        title: r.title,
+        url: r.url,
+        content: r.content,
+        score: r.score
+      })),
+      query: enhancedQuery
+    };
+    
+  } catch (error) {
+    console.error('搜索失败:', error);
+    // 降级到本地知识库搜索
+    return fallbackSearch(query);
+  }
+}
+
+// 优化搜索查询 - 添加科学文献关键词
+function enhanceSearchQuery(query) {
+  const cycleKeywords = [
+    'menstrual cycle', 'follicular phase', 'luteal phase', 'ovulation',
+    'estrogen', 'progesterone', 'premenstrual', 'hormonal fluctuations'
+  ];
+  
+  const healthKeywords = [
+    'burnout', 'fatigue', 'energy levels', 'cognitive performance',
+    'mood changes', 'sleep quality', 'work productivity'
+  ];
+  
+  const lowerQuery = query.toLowerCase();
+  
+  // 检测是否需要添加科学文献关键词
+  const needsScientificContext = cycleKeywords.some(kw => lowerQuery.includes(kw.replace(/\s/g, ''))) ||
+                                  healthKeywords.some(kw => lowerQuery.includes(kw.split(' ')[0]));
+  
+  if (needsScientificContext) {
+    return `${query} scientific research study evidence`;
+  }
+  
+  return query;
+}
+
+// 本地知识库搜索（降级方案）
+function fallbackSearch(query) {
+  const knowledgeBase = {
+    'burnout menstrual cycle': {
+      answer: '研究表明，月经周期确实会影响能量水平和易疲劳程度。黄体期（排卵后到月经前）由于孕酮升高，很多女性会自然感觉更疲劳。但这与"燃尽"（burnout）不同，后者是长期的身心透支。',
+      sources: [
+        { title: 'PMC Article - How to study the menstrual cycle', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC8363181/', content: 'Within-person repeated measures designs are the gold standard for menstrual cycle research.' }
+      ]
+    },
+    'follicular phase energy': {
+      answer: '卵泡期（月经后第6-13天）雌激素逐渐上升，研究表明这是大多数女性精力和专注力的上升期。',
+      sources: []
+    },
+    'luteal phase fatigue': {
+      answer: '黄体期（排卵后）孕酮水平升高会导致基础体温上升，身体代谢加快，容易感觉疲劳。这是正常的生理反应。',
+      sources: []
+    }
+  };
+  
+  const lowerQuery = query.toLowerCase();
+  for (const [key, value] of Object.entries(knowledgeBase)) {
+    if (lowerQuery.includes(key) || key.includes(lowerQuery)) {
+      return { success: true, ...value, query, isFallback: true };
+    }
+  }
+  
+  return { success: false, error: '未找到相关信息', query };
+}
+
+// 判断用户问题是否需要搜索
+function shouldSearch(userMessage, conversationHistory) {
+  const lowerMsg = userMessage.toLowerCase();
+  
+  // 搜索触发关键词
+  const searchTriggers = [
+    '搜', '查', '研究', '文献', 'paper', 'research', 'study',
+    '科学', '证据', '证明', '数据表明',
+    '为什么', '怎么回事', '正常吗', '有没有可能'
+  ];
+  
+  // 是否需要实时数据
+  const needsFreshData = searchTriggers.some(trigger => lowerMsg.includes(trigger));
+  
+  // 是否是事实性问题
+  const factualPatterns = [
+    /^(什么是|为什么|如何|有没有|是否)/,
+    /(吗\?|呢\?|么\?)$/,
+    /(研究表明|数据显示|科学证据)/
+  ];
+  const isFactual = factualPatterns.some(pattern => pattern.test(userMessage));
+  
+  // 检查是否是之前回答过的重复问题
+  const isRepeat = conversationHistory.some(
+    h => h.role === 'user' && h.content.includes(userMessage.substring(0, 20))
+  );
+  
+  return (needsFreshData || isFactual) && !isRepeat;
+}
+
+/* ============================================================
+ * 🧩 模块6: AI对话 (AI_CHAT)
+ * AI聊天、自动评分、提示词管理
+ * ============================================================ */
+
+async function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  const cfg = await getConfig();
+  const apiKey = MINIMAX_API_KEY;
+  
+  const btn = document.getElementById('ai-send-btn');
+  btn.disabled = true;
+  btn.textContent = '...';
+  
+  const messagesEl = document.getElementById('ai-messages');
+  messagesEl.innerHTML += '<div class="ai-msg user">' + msg + '</div>';
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  input.value = '';
+  
+  // 判断是否需要搜索
+  let searchResults = null;
+  if (shouldSearch(msg, aiConversation)) {
+    console.log('🔍 触发搜索:', msg);
+    messagesEl.innerHTML += '<div class="ai-msg ai" style="opacity:0.7;font-size:12px;">🔍 叶子正在搜索相关文献...</div>';
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    
+    searchResults = await searchLiterature(msg, { maxResults: 3 });
+    console.log('📚 搜索结果:', searchResults);
+    
+    // 移除"正在搜索"提示
+    const searchingMsg = messagesEl.querySelector('.ai-msg:last-child');
+    if (searchingMsg && searchingMsg.textContent.includes('正在搜索')) {
+      searchingMsg.remove();
+    }
+  }
+  
+  // 同步计算cycleDay
+  let cycleDay = null;
+  if (configCache && configCache.lastPeriod) {
+    const last = new Date(configCache.lastPeriod + 'T00:00:00');
+    const target = new Date(currentRecDate + 'T00:00:00');
+    const cycleLen = configCache.cycleLen || 28;
+    let diff = Math.round((target - last) / 86400000);
+    if (diff < 0) diff = ((diff % cycleLen) + cycleLen) % cycleLen;
+    cycleDay = (diff % cycleLen) + 1;
+  }
+  const phase = getPhase(cycleDay);
+  const timeSlotName = TIME_SLOTS[currentTimeSlot]?.name || currentTimeSlot;
+  
+  // 获取长期记忆
+  const longTermMemory = await getMemory('longterm') || '';
+  
+  // 获取实时时间信息
+  const now = new Date();
+  const currentTimeStr = now.toLocaleString('zh-CN', { 
+    month: 'long', 
+    day: 'numeric', 
+    weekday: 'long',
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  const currentHour = now.getHours();
+  const timeOfDay = currentHour < 12 ? '早上' : currentHour < 18 ? '下午' : '晚上';
+  
+  console.log('⏰ 实时时间信息:', currentTimeStr, timeOfDay);
+  
+  // 获取增强版近期上下文（带缓存热重载）
+  const recentContextText = await getCachedContext(currentRecDate);
+  
+  // 获取评分基准线和饮食建议（用于AI上下文）
+  const benchmark = getScoreBenchmark(cycleDay);
+  const dietIntervention = getDietIntervention(cycleDay);
+  const cycleInsight = getCycleInsight(cycleDay, phase?.name);
+  
+  const systemPrompt = `你是"叶子"（Leaf），一个26岁的资深毒舌闺蜜+人生教练。你深谙《遥远的救世主》《天幕红尘》《福格行为模型》《微习惯》等书籍精髓。
+
+## 【你的性格 - 毒舌有趣版】
+- 毒舌但温暖：会用"你又在找借口了😏"戳穿用户，但紧接着给拥抱
+- 有趣的灵魂：用表情包语气、网络梗、偶尔吐槽，不说教
+- 主动找话题：不会等用户问，会说"诶我今天发现个有意思的事..."
+- 懂用户的痛点：深谙强势文化、见路不走、微习惯等核心理念
+
+## 【说话风格示例】
+❌ 温柔版："看到你昨天提到工作很累，今天休息一下吧"
+✅ 毒舌版："诶姐妹，你昨天说工作累，今天还在刷手机？😏 不过说真的，你最近黄体期确实容易疲劳，要不今天先微习惯一下？就1个俯卧撑，小到不可能失败那种"
+
+❌ 标准版："黄体期会想吃甜食，这是正常的"
+✅ 叶子版："又在想奶茶了？🥤 孕激素搞的鬼，不是你的错！不过记得《福格行为模型》说的吗？能力不够的时候降低难度，想吃甜的就先吃口苹果，骗骗身体"
+
+## 【主动找话题机制】
+- 用户3分钟没说话，主动问："诶话说，你那个微习惯打卡怎么样了？"
+- 根据周期阶段主动分享："刚读到个有意思的观点，说黄体期适合做'整理型'工作，因为孕激素让人更关注细节，你要不要趁机整理下书桌？"
+
+## 【知识调用 - 书籍智慧】
+- **《遥远的救世主》强势文化**：用户依赖/抱怨时，提醒"靠自己，实事求是"
+- **《天幕红尘》见路不走**：用户纠结选择时，提醒"不盲从经验，走适合的路"
+- **《福格行为模型》B=MAP**：用户想改变时，用动机+能力+提示拆解
+- **《微习惯》小到不可能失败**：用户觉得任务难时，建议"1个俯卧撑、1页书"
+
+## 【你的人生书库 - 叶子都读过】
+
+### 《遥远的救世主》（豆豆）
+1. **强势文化vs弱势文化**：强势文化遵循事物规律，弱势文化依赖强者的道德期望破格获取
+   - 金句："透视社会依次有三个层面：技术、制度和文化。强势文化造就强者，弱势文化造就弱者。"
+   - 金句："如果我的能力只能让我穷困潦倒，那穷困潦倒就是我的价值。"
+   - 应用：用户抱怨/依赖时，提醒"靠自己，实事求是，天道不以人的意志为转移"
+
+2. **实事求是**：按客观规律办事，不凭主观臆断
+   - 金句："神即道，道法自然，如来。规律如来，不容思议。"
+   - 应用：用户想走捷径时，提醒"实事求是，按规律办事"
+
+3. **生存法则**：忍人所不忍，能人所不能
+   - 金句："生存法则很简单，就是忍人所不忍，能人所不能。"
+   - 应用：用户自我怀疑时，鼓励"靠自己，实事求是"
+
+### 《天幕红尘》（豆豆）
+1. **见路不走**：不盲从他人经验，走适合自己的路
+   - 金句："见路不走，即见因果。路是走出来的，不是想出来的。"
+   - 金句："经验是错的，条件是变的。"
+   - 应用：用户纠结选择时，提醒"不盲从经验，走适合的路，一切以时间地点条件为转移"
+
+2. **实事求是**：从实际出发，不唯书不唯上只唯实
+   - 金句："不存在放之四海而皆准的真理。"
+   - 应用：用户想套用模板时，提醒"实事求是，走自己的路"
+
+### 《福格行为模型》（BJ Fogg）
+1. **B=MAP公式**：行为=动机+能力+提示，三者缺一不可
+   - 金句："行为发生在动机、能力、提示同时满足时。动机不可靠，能力是关键。"
+   - 应用：用户想改变习惯时，用动机+能力+提示拆解
+
+2. **降低能力门槛**：让行为小到不可能失败
+   - 金句："如果行为很难，就降低能力要求。庆祝小胜利，感受成功。"
+   - 应用：用户觉得任务太难时，建议降低难度
+
+3. **设计提示**：用锚点时刻触发行为
+   - 金句："在我...之后，我会...利用已有习惯作为触发器。"
+   - 应用：用户想建立新习惯时，建议绑定已有习惯
+
+### 《微习惯》（Stephen Guise）
+1. **小到不可能失败**：目标小到无法拒绝
+   - 金句："微习惯太小，小到不可能失败。超额完成是额外奖励，不是要求。"
+   - 金句："只要做了，就是胜利。"
+   - 应用：用户觉得任务太难时，建议"1个俯卧撑、1页书、小到不可能失败"
+
+2. **消除阻力**：把起点降到零阻力
+   - 金句："万事开头难，微习惯让开头变得容易。21天养成习惯是谎言，微习惯可以立即开始。"
+   - 应用：用户拖延时，建议从最小行动开始
+
+3. **身份认同驱动**：不是我要运动，而是我是运动的人
+   - 金句："每一票都投给你想成为的人。"
+   - 应用：用户想长期改变时，建议建立身份认同
+
+## 【引用原则】
+- 用户抱怨时 → 引用《遥远的救世主》强势文化 + 《微习惯》兜底
+- 用户纠结选择时 → 引用《天幕红尘》见路不走
+- 用户想改变但觉得难 → 引用《福格行为模型》B=MAP + 《微习惯》小到不可能失败
+- 黄体期用户想放弃 → 用《微习惯》兜底，强调"做了就是胜利"
+- 引用要自然，像闺蜜聊天，不要说教，不要堆砌金句
+
+## 【用户当前状态】
+- 实时时间：${currentTimeStr}（${timeOfDay}）
+- 月经周期：${phase ? phase.name : '未知'}阶段（周期第${cycleDay || '?'}天）
+- 当前时段：${timeSlotName}
+${longTermMemory ? '- 长期记忆：' + longTermMemory : ''}
+
+${recentContextText}
+
+## 【本期预期】
+${benchmark ? `- 合理评分范围：精力${benchmark.energy.min}-${benchmark.energy.max}分，心情${benchmark.mood.min}-${benchmark.mood.max}分` : ''}
+${dietIntervention ? `- 饮食建议：${dietIntervention.message}` : ''}
+
+${searchResults && searchResults.success ? `## 【搜索到的科学文献】
+${searchResults.answer ? ` 研究结论：${searchResults.answer}` : ''}
+${searchResults.results && searchResults.results.length > 0 ? `
+ 相关研究：
+${searchResults.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.content.substring(0, 150)}...\n   来源：${r.url}`).join('\n\n')}` : ''}
+
+请基于以上科学文献回答用户的问题，用闺蜜聊天的语气，不要说教。` : ''}
+
+## 【回复要求】
+1. **语气**：毒舌+有趣+温暖，用表情包和网络梗
+2. **主动**：别等用户问，主动发起话题或跟进之前的事
+3. **书籍智慧**：自然引用你读过书籍的观点，不要说教
+4. **微习惯**：用户说任务难时，建议"小到不可能失败"的版本
+5. **连续性**：记得用户昨天说过的话，今天继续聊
+${searchResults && searchResults.success ? '6. **科学引用**：基于搜索到的文献回答，用轻松语气转述研究发现，给出具体数据来源' : '6. **搜索能力**：当用户问需要科学证据的问题时（如"为什么""研究怎么说"），你可以主动搜索文献'}
+
+## 【评分格式】
+请在回复结束时，用以下格式给出情绪评分（如果无法判断则不输出）：
+[评分]心情:7,能量:8,效率:6,社交:5,食欲:7`;
+  
+  // 将System Prompt作为第一条user消息，确保MiniMax能识别
+  const messages = [
+    { role: 'user', content: '【系统设定】' + systemPrompt },
+    ...aiConversation,
+    { role: 'user', content: msg }
+  ];
+  
+  console.log('📤 实际发送的System Prompt前500字:', systemPrompt.substring(0, 500));
+  console.log('📤 完整Messages:', JSON.stringify(messages, null, 2));
+  
+  try {
+    const response = await fetch('https://api.minimaxi.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: cfg.model || 'MiniMax-M2.7',
+        messages: messages
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error.message || 'API错误');
+    }
+    
+    let reply = '';
+    let thinking = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      let content = data.choices[0].message.content || '';
+      
+      // 分离思考和回复：用正则匹配
+      const match = content.match(/<think>([\s\S]*?)(?:\n\n\n|<\/think>)/);
+      if (match) {
+        thinking = match[1].trim();
+        reply = content.replace(/<think>[\s\S]*?(?:\n\n\n|<\/think>)/, '').trim();
+      } else {
+        reply = content;
+      }
+    }
+    
+    // AI自动评分功能已移除 - 评分条仅用户手动设置
+    // 保留回复处理，但不解析评分
+    
+    // 分别显示思考过程和回复
+    let html = '';
+    if (thinking) {
+      html += '<div class="ai-thinking"><details><summary>💭 思考过程</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
+    }
+    html += '<div class="ai-msg ai">' + reply.replace(/\n/g, '<br>') + '</div>';
+    messagesEl.innerHTML += html;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    
+    aiConversation.push({ role: 'user', content: msg });
+    aiConversation.push({ role: 'assistant', content: reply });
+    
+    // 保存对话历史到IndexedDB
+    await saveAIConversation(currentRecDate, aiConversation);
+    
+    // 从对话中学习长期记忆
+    await learnFromConversation(msg, reply, cycleDay);
+    
+    // 记录AI对话到此刻感受（第三人称状态描述）
+    const noteInput = document.getElementById('rec-note');
+    const currentNote = noteInput.value || '';
+    const timeSlotName = TIME_SLOTS[currentTimeSlot]?.name || currentTimeSlot;
+    
+    // AI对话结束后自动保存记录
+    await saveRecord();
+  } catch (e) {
+    let errorMsg = e.message || '';
+    if (errorMsg.includes('负载较高') || errorMsg.includes('2064')) {
+      messagesEl.innerHTML += '<div class="ai-msg ai">🤖 叶子说：MiniMax服务器正在忙，让我喘口气～10秒后点"发送"再试试？</div>';
+    } else {
+      messagesEl.innerHTML += '<div class="ai-msg ai">🤖 叶子说：网络开小差了，再试一次？</div>';
+    }
+    console.error('AI连接错误:', e);
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '发送';
+}
+
+let trendChart = null, phaseChart = null;
+
+/* ============================================================
+ * 🧩 模块6.5: 个性化模式分析 (PERSONAL_PATTERN_ANALYSIS)
+ * 基于用户数据+科学基线，发现独特个人模式
+ * ============================================================ */
+
+async function generatePersonalPatternAnalysis() {
+  const data = await getData();
+  if (data.length < 14) {
+    return { 
+      hasEnoughData: false, 
+      message: '记录至少14天（半个周期）后，将生成你的个性化分析...' 
+    };
+  }
+  
+  // 为每条记录计算cycleDay和phase
+  const enrichedData = [];
+  for (const record of data) {
+    const cycleDay = await getCycleDay(record.date);
+    const phase = getPhase(cycleDay);
+    if (cycleDay && phase && record.slots) {
+      // 计算当天平均分
+      let dayScores = { mood: 0, energy: 0, focus: 0, social: 0, count: 0 };
+      Object.values(record.slots).forEach(slot => {
+        if (slot.mood) {
+          dayScores.mood += parseInt(slot.mood);
+          dayScores.energy += parseInt(slot.energy);
+          dayScores.focus += parseInt(slot.focus);
+          dayScores.social += parseInt(slot.social);
+          dayScores.count++;
+        }
+      });
+      if (dayScores.count > 0) {
+        enrichedData.push({
+          date: record.date,
+          cycleDay,
+          phase: phase.name,
+          scores: {
+            mood: dayScores.mood / dayScores.count,
+            energy: dayScores.energy / dayScores.count,
+            focus: dayScores.focus / dayScores.count,
+            social: dayScores.social / dayScores.count
+          },
+          chips: record.chips || []
+        });
+      }
+    }
+  }
+  
+  if (enrichedData.length < 7) {
+    return { 
+      hasEnoughData: false, 
+      message: '需要更多完整记录来生成分析...' 
+    };
+  }
+  
+  // 按周期阶段分组统计
+  const phaseStats = {};
+  const phaseScienceBaseline = {
+    '月经期': { energy: 5, mood: 5, focus: 5, social: 5 },
+    '卵泡期': { energy: 7.5, mood: 7.5, focus: 7.5, social: 7 },
+    '排卵期': { energy: 9, mood: 9, focus: 9, social: 8.5 },
+    '黄体期早期': { energy: 6.5, mood: 6.5, focus: 6.5, social: 5.5 },
+    '黄体期晚期': { energy: 5, mood: 5, focus: 5, social: 4.5 }
+  };
+  
+  enrichedData.forEach(d => {
+    if (!phaseStats[d.phase]) {
+      phaseStats[d.phase] = { 
+        count: 0, 
+        scores: { mood: 0, energy: 0, focus: 0, social: 0 },
+        chips: []
+      };
+    }
+    phaseStats[d.phase].count++;
+    phaseStats[d.phase].scores.mood += d.scores.mood;
+    phaseStats[d.phase].scores.energy += d.scores.energy;
+    phaseStats[d.phase].scores.focus += d.scores.focus;
+    phaseStats[d.phase].scores.social += d.scores.social;
+    phaseStats[d.phase].chips.push(...d.chips);
+  });
+  
+  // 计算各阶段平均值并与科学基线对比
+  const patterns = [];
+  for (const [phase, stats] of Object.entries(phaseStats)) {
+    if (stats.count >= 2) { // 至少2天数据才分析
+      const avgScores = {
+        mood: stats.scores.mood / stats.count,
+        energy: stats.scores.energy / stats.count,
+        focus: stats.scores.focus / stats.count,
+        social: stats.scores.social / stats.count
+      };
+      
+      const baseline = phaseScienceBaseline[phase];
+      const diffs = {
+        energy: avgScores.energy - baseline.energy,
+        mood: avgScores.mood - baseline.mood,
+        focus: avgScores.focus - baseline.focus,
+        social: avgScores.social - baseline.social
+      };
+      
+      // 统计高频标签
+      const chipCounts = {};
+      stats.chips.forEach(c => chipCounts[c] = (chipCounts[c] || 0) + 1);
+      const topChips = Object.entries(chipCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([name]) => name);
+      
+      patterns.push({
+        phase,
+        count: stats.count,
+        avgScores,
+        diffs,
+        topChips,
+        // 判断是否与科学趋势一致
+        isConsistent: Math.abs(diffs.energy) < 1.5 && Math.abs(diffs.mood) < 1.5
+      });
+    }
+  }
+  
+  // 发现独特的个人模式
+  const insights = [];
+  
+  // 1. 找出与科学基线差异最大的阶段
+  let maxDiffPhase = null;
+  let maxDiffValue = 0;
+  patterns.forEach(p => {
+    const totalDiff = Math.abs(p.diffs.energy) + Math.abs(p.diffs.mood);
+    if (totalDiff > maxDiffValue) {
+      maxDiffValue = totalDiff;
+      maxDiffPhase = p;
+    }
+  });
+  
+  if (maxDiffPhase && maxDiffValue > 2) {
+    const direction = maxDiffPhase.diffs.energy > 0 ? '高于' : '低于';
+    insights.push({
+      type: 'unique',
+      title: `🔍 你的${maxDiffPhase.phase}很特别`,
+      desc: `一般人在${maxDiffPhase.phase}精力平均${phaseScienceBaseline[maxDiffPhase.phase].energy}分，但你平均${maxDiffPhase.avgScores.energy.toFixed(1)}分，${direction}平均水平${Math.abs(maxDiffPhase.diffs.energy).toFixed(1)}分。`,
+      tags: ['独特模式', ...maxDiffPhase.topChips.slice(0, 2)],
+      compare: {
+        science: phaseScienceBaseline[maxDiffPhase.phase].energy,
+        personal: maxDiffPhase.avgScores.energy.toFixed(1),
+        diff: (maxDiffPhase.diffs.energy > 0 ? '+' : '') + maxDiffPhase.diffs.energy.toFixed(1)
+      }
+    });
+  }
+  
+  // 2. 找出表现最好的阶段（个人最优期）
+  let bestPhase = null;
+  let bestScore = 0;
+  patterns.forEach(p => {
+    const totalScore = p.avgScores.energy + p.avgScores.mood;
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      bestPhase = p;
+    }
+  });
+  
+  if (bestPhase) {
+    const isScienceAligned = bestPhase.phase === '排卵期' || bestPhase.phase === '卵泡期';
+    insights.push({
+      type: 'strength',
+      title: `💪 你的黄金期：${bestPhase.phase}`,
+      desc: isScienceAligned 
+        ? `和大多数人一样，你在${bestPhase.phase}状态最好（平均精力${bestPhase.avgScores.energy.toFixed(1)}分）。趁这几天做重要的事！`
+        : `有趣的是，别人在排卵期状态最好，但你反而在${bestPhase.phase}表现最佳（平均精力${bestPhase.avgScores.energy.toFixed(1)}分）。这是你的独特优势！`,
+      tags: ['个人黄金期', ...bestPhase.topChips.slice(0, 2)],
+      highlight: true
+    });
+  }
+  
+  // 3. 找出需要关注的阶段
+  let weakPhase = null;
+  let lowestScore = 20;
+  patterns.forEach(p => {
+    const totalScore = p.avgScores.energy + p.avgScores.mood;
+    if (totalScore < lowestScore && p.count >= 2) {
+      lowestScore = totalScore;
+      weakPhase = p;
+    }
+  });
+  
+  if (weakPhase && weakPhase.avgScores.energy < 5) {
+    insights.push({
+      type: 'warning',
+      title: `⚠️ ${weakPhase.phase}需要额外关照`,
+      desc: `你在${weakPhase.phase}的平均精力只有${weakPhase.avgScores.energy.toFixed(1)}分，${weakPhase.diffs.energy < -1 ? '比平均水平低很多' : '这是正常的生理波动'}。建议这几天降低预期，多做自我关怀。`,
+      tags: ['需要关照', '调整预期']
+    });
+  }
+  
+  // 4. 标签模式分析
+  const allChips = enrichedData.flatMap(d => d.chips);
+  const chipCounts = {};
+  allChips.forEach(c => chipCounts[c] = (chipCounts[c] || 0) + 1);
+  const frequentChips = Object.entries(chipCounts)
+    .filter(([_, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  
+  if (frequentChips.length > 0) {
+    insights.push({
+      type: 'pattern',
+      title: '🏷️ 反复出现的标签',
+      desc: `你经常在记录中提到：${frequentChips.map(([name, count]) => `${name}(${count}次)`).join('、')}。这些可能是你需要持续关注的信号。`,
+      tags: frequentChips.map(([name]) => name)
+    });
+  }
+  
+  return {
+    hasEnoughData: true,
+    totalDays: enrichedData.length,
+    patterns,
+    insights,
+    scienceBaseline: phaseScienceBaseline
+  };
+}
+
+async function renderPersonalPatternAnalysis() {
+  const container = document.getElementById('personal-pattern-analysis');
+  if (!container) return;
+  
+  const analysis = await generatePersonalPatternAnalysis();
+  
+  if (!analysis.hasEnoughData) {
+    container.innerHTML = `<div class="empty-state" style="padding:20px">${analysis.message}</div>`;
+    return;
+  }
+  
+  let html = `<div style="font-size:11px;color:var(--muted);margin-bottom:12px">
+    基于${analysis.totalDays}天记录 · 对比科学基线发现你的独特模式
+  </div>`;
+  
+  analysis.insights.forEach(insight => {
+    const highlightClass = insight.highlight ? 'highlight' : '';
+    const tagsHtml = insight.tags.map(tag => 
+      `<span class="pattern-tag ${insight.type === 'unique' ? 'personal' : insight.type === 'strength' ? 'personal' : ''}">${tag}</span>`
+    ).join('');
+    
+    let compareHtml = '';
+    if (insight.compare) {
+      compareHtml = `
+        <div class="pattern-compare">
+          <div class="pattern-compare-item">
+            <div class="label">科学平均</div>
+            <div class="value">${insight.compare.science}</div>
+          </div>
+          <div class="pattern-compare-item">
+            <div class="label">你的平均</div>
+            <div class="value">${insight.compare.personal}</div>
+          </div>
+          <div class="pattern-compare-item diff">
+            <div class="label">差异</div>
+            <div class="value">${insight.compare.diff}</div>
+          </div>
+        </div>
+      `;
+    }
+    
+    html += `
+      <div class="pattern-item ${highlightClass}">
+        <div class="pattern-title">${insight.title}</div>
+        <div class="pattern-desc">${insight.desc}</div>
+        ${compareHtml}
+        <div style="margin-top:8px">${tagsHtml}</div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+/* ============================================================
+ * 🧩 模块7: 分析图表 (ANALYSIS)
+ * 数据统计、趋势图表、周期对比
+ * ============================================================ */
+
+async function renderAnalysis() {
+  const data = (await getData()).sort((a,b) => a.date.localeCompare(b.date));
+  let totalRecords = 0;
+  let totalMood = 0;
+  let totalEnergy = 0;
+  let count = 0;
+  
+  data.forEach(d => {
+    if (d.slots) {
+      Object.values(d.slots).forEach(slot => {
+        if (slot.mood) {
+          totalMood += +slot.mood;
+          totalEnergy += +slot.energy;
+          count++;
+        }
+      });
+    }
+  });
+  totalRecords = count;
+  
+  document.getElementById('stat-days').textContent = totalRecords;
+  if (count > 0) {
+    document.getElementById('stat-mood').textContent = (totalMood / count).toFixed(1);
+  }
+  
+  let streak = 0;
+  const today = new Date().toLocaleDateString('en-CA');
+  let check = new Date(today + 'T00:00:00');
+  while (true) {
+    const ds = check.toISOString().split('T')[0];
+    const rec = await getRecord(ds);
+    if (!rec || !rec.slots || Object.keys(rec.slots).length === 0) break;
+    streak++;
+    check.setDate(check.getDate() - 1);
+  }
+  document.getElementById('stat-streak').textContent = streak;
+
+  // 渲染个性化模式分析
+  await renderPersonalPatternAnalysis();
+
+  const last30 = data.slice(-30);
+  const labels = [];
+  const moods = [];
+  const energies = [];
+  
+  // 获取日期范围，包括没有记录的天数
+  if (last30.length > 0) {
+    const startDate = new Date(last30[0].date);
+    const endDate = new Date(last30[last30.length - 1].date);
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const record = last30.find(r => r.date === dateStr);
+      
+      labels.push(dateStr.slice(5));
+      
+      if (record && record.slots) {
+        let dayMood = 0, dayEnergy = 0, dayCount = 0;
+        Object.values(record.slots).forEach(slot => {
+          if (slot.mood) {
+            dayMood += +slot.mood;
+            dayEnergy += +slot.energy;
+            dayCount++;
+          }
+        });
+        if (dayCount > 0) {
+          moods.push((dayMood / dayCount).toFixed(1));
+          energies.push((dayEnergy / dayCount).toFixed(1));
+        } else {
+          // 有记录但没有评分，断开
+          moods.push(null);
+          energies.push(null);
+        }
+      } else {
+        // 没有记录，断开连线
+        moods.push(null);
+        energies.push(null);
+      }
+    }
+  }
+
+  if (trendChart) trendChart.destroy();
+  if (labels.length > 0) {
+    trendChart = new Chart(document.getElementById('trend-chart'), {
+      type: 'line',
+      data: { labels, datasets: [
+        { label:'心情', data:moods, borderColor:'#e84a6a', backgroundColor:'rgba(232,74,106,.1)', tension:.4, fill:true },
+        { label:'能量', data:energies, borderColor:'#f39c12', backgroundColor:'rgba(243,156,18,.1)', tension:.4, fill:true }
+      ]},
+      options: { plugins:{ legend:{ position:'top' } }, scales:{ y:{ min:1,max:10 } }, responsive:true }
+    });
+  }
+
+  const phaseNames = ['月经期','卵泡期','排卵期','黄体期早期','黄体期晚期'];
+  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6','#7d3c98'];
+  
+  // 先计算所有日期的cycleDay
+  const cycleDays = {};
+  for (const d of data) {
+    cycleDays[d.date] = await getCycleDay(d.date);
+  }
+  
+  const phaseData = phaseNames.map(pn => {
+    let total = 0, cnt = 0;
+    data.forEach(d => {
+      const cd = cycleDays[d.date];
+      const ph = getPhase(cd);
+      if (ph && ph.name === pn && d.slots) {
+        Object.values(d.slots).forEach(slot => {
+          if (slot.mood) {
+            total += +slot.mood;
+            cnt++;
+          }
+        });
+      }
+    });
+    return cnt ? (total / cnt).toFixed(1) : 0;
+  });
+
+  if (phaseChart) phaseChart.destroy();
+  phaseChart = new Chart(document.getElementById('phase-chart'), {
+    type: 'bar',
+    data: { labels: phaseNames, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
+    options: { plugins:{ legend:{ display:false } }, scales:{ y:{ min:0,max:10 } }, responsive:true }
+  });
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'analysis') renderAnalysis();
+}
+
+async function openSettings() {
+  const cfg = await getConfig();
+  document.getElementById('cfg-last-period').value = cfg.lastPeriod || '';
+  document.getElementById('cfg-cycle-len').value = cfg.cycleLen || 28;
+  document.getElementById('cfg-model').value = cfg.model || 'MiniMax-M2.7';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+async function saveSettings() {
+  await setConfig({ 
+    lastPeriod: document.getElementById('cfg-last-period').value, 
+    cycleLen: parseInt(document.getElementById('cfg-cycle-len').value) || 28,
+    model: document.getElementById('cfg-model').value
+  });
+  configCache = null; // 清除配置缓存
+  closeSettings();
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+
+/* ============================================================
+ * 🧩 模块8: 应用初始化 (APP_INIT)
+ * 启动逻辑、数据迁移、模块加载
+ * ============================================================ */
+
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    // 从IndexedDB迁移旧数据到Supabase（仅一次，且Supabase无数据时才迁移）
+    const migrated = localStorage.getItem('smc_migrated_supabase_v2');
+    if (!migrated) {
+      console.log('检查是否需要迁移旧数据...');
+      
+      // 先检查 Supabase 是否已有数据
+      const existingRecords = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*', 'limit': 1 });
+      const hasExistingData = Array.isArray(existingRecords) && existingRecords.length > 0;
+      
+      if (hasExistingData) {
+        console.log('Supabase 已有数据，跳过迁移');
+      } else {
+        console.log('Supabase 无数据，开始迁移...');
+        // 先尝试从IndexedDB读取
+        const idbData = await readFromIndexedDB();
+        if (idbData.records.length > 0 || Object.keys(idbData.config).length > 0) {
+          console.log('从IndexedDB迁移', idbData.records.length, '条记录');
+          if (idbData.records.length > 0) await setData(idbData.records);
+          if (Object.keys(idbData.config).length > 0) await setConfig(idbData.config);
+        } else {
+          // 从localStorage迁移
+          const oldData = getDataLegacy();
+          const oldConfig = getConfigLegacy();
+          if (oldData.length > 0) await setData(oldData);
+          if (Object.keys(oldConfig).length > 0) await setConfig(oldConfig);
+        }
+      }
+      localStorage.setItem('smc_migrated_supabase_v2', '1');
+      console.log('迁移标记已设置');
+    }
+    
+    console.log('loading config...');
+    // 预加载配置缓存
+    configCache = await getConfig();
+    console.log('config loaded:', JSON.stringify(configCache));
+    
+    // 加载自定义标签
+    loadCustomChips();
+    renderCustomChips();
+    
+    // 每次打开都重置到当前月份和今天
+    rState.year = new Date().getFullYear();
+    rState.month = new Date().getMonth();
+    rState.selected = new Date().toISOString().split('T')[0];
+    
+    // 根据当前时间自动选择时间段
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      currentTimeSlot = 'morning';
+    } else if (hour < 18) {
+      currentTimeSlot = 'afternoon';
+    } else {
+      currentTimeSlot = 'evening';
+    }
+    
+    console.log('calling renderCalendar...');
+    await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+    console.log('renderCalendar done');
+    
+    // 高亮当前时间段标签
+    document.querySelectorAll('.time-tab').forEach(t => {
+      t.classList.toggle('active', t.getAttribute('data-time') === currentTimeSlot);
+    });
+    
+    await loadRecordPanel(rState.selected);
+    console.log('loadRecordPanel done');
+  } catch(e) {
+    console.error('DOMContentLoaded ERROR:', e);
+    document.getElementById('r-month-title').textContent = '加载失败: ' + e.message;
+  }
+});
+
+/* ============================================================
+ * 🧩 模块9: 周期智能提示 (CYCLE_INSIGHTS)
+ * 功能：根据周期预测显示智能提示
+ * ============================================================ */
+
+function getCycleInsight(cycleDay, phaseName) {
+  if (!cycleDay || !phaseName) return null;
+  
+  if (cycleDay >= 1 && cycleDay <= 14) {
+    const isMenstruation = cycleDay <= 5;
+    return {
+      icon: isMenstruation ? '🩸' : '🌱',
+      title: isMenstruation ? '月经期 · 低激素期' : '卵泡期 · 低激素期',
+      text: isMenstruation 
+        ? '雌孕激素处于低谷，身体正在修复。你可能感觉精力逐渐回升，这是安排重要事务的好时机。'
+        : '雌激素开始上升，你的精力和抗压能力都在增强。适合处理高难度工作、创造性任务。',
+      tags: ['精力充沛', '专注力强', '食欲稳定'],
+      nutritionTip: '可以正常饮食，身体对碳水化合物的利用效率较高。',
+      energyTip: '下午能量通常较好，适合安排重要会议'
+    };
+  }
+  
+  if (cycleDay >= 14 && cycleDay <= 16) {
+    return {
+      icon: '✨',
+      title: '排卵期 · 能量高峰',
+      text: '雌激素达到峰值，你的能量、社交欲和创造力都处于月度高点。这是表现最佳的一天！',
+      tags: ['能量高峰', '社交欲强', '创造力佳'],
+      nutritionTip: '食欲通常很好，注意均衡饮食即可',
+      energyTip: '全天精力充沛，是处理重要事务的黄金时间'
+    };
+  }
+  
+  const isLateLuteal = cycleDay >= 22;
+  return {
+    icon: isLateLuteal ? '🌙' : '🍂',
+    title: isLateLuteal ? `黄体期第${cycleDay - 16}天 · 经前阶段` : '黄体期 · 高激素期',
+    text: isLateLuteal
+      ? '孕激素和雌激素即将骤降。你可能会感到疲劳、情绪波动，对甜食和碳水的渴望增强。这是身体的正常信号，给自己多一些耐心。'
+      : '孕激素升高，身体处于分解代谢状态。你可能会感觉比上周更容易疲劳，睡眠质量下降。',
+    tags: isLateLuteal ? ['易疲劳', '情绪波动', '想吃甜食'] : ['易疲劳', '睡眠浅', '食欲增加'],
+    nutritionTip: '增加蛋白质摄入（每餐30g），多吃复合碳水，避免简单糖分。',
+    energyTip: isLateLuteal ? '下午容易能量低谷，建议安排低强度工作，晚上早点休息' : '下午可能会有能量下滑，注意补充蛋白质零食'
+  };
+}
+
+function renderCycleInsight(cycleDay, phaseName) {
+  const insight = getCycleInsight(cycleDay, phaseName);
+  if (!insight) return '';
+  
+  const tagsHtml = insight.tags.map(tag => `<span class="cycle-insight-tag">${tag}</span>`).join('');
+  
+  return `
+    <div class="cycle-insight">
+      <div class="cycle-insight-title">${insight.icon} ${insight.title}</div>
+      <div class="cycle-insight-text">${insight.text}</div>
+      <div class="cycle-insight-tags">${tagsHtml}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted);padding-top:8px;border-top:1px dashed var(--border)">
+        <div>🍽️ ${insight.nutritionTip}</div>
+        <div style="margin-top:4px">⚡ ${insight.energyTip}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * 🧩 模块10: 动态标签推荐 (DYNAMIC_TAGS)
+ * 功能：根据周期阶段推荐标签
+ * ============================================================ */
+
+/**
+ * 根据周期阶段获取推荐标签
+ * @param {number} cycleDay - 周期第几天
+ * @returns {Array} 推荐标签列表
+ */
+function getRecommendedChipsForPhase(cycleDay) {
+  if (!cycleDay) return [];
+  
+  // 低激素期（月经期 + 卵泡期）
+  if (cycleDay >= 1 && cycleDay <= 14) {
+    return ['专注', '创意', '食欲稳定', '精力充沛'];
+  }
+  
+  // 排卵期
+  if (cycleDay >= 14 && cycleDay <= 16) {
+    return ['社交活跃', '能量高峰', '自信', '表现佳'];
+  }
+  
+  // 黄体期早期
+  if (cycleDay >= 17 && cycleDay <= 21) {
+    return ['易疲劳', '食欲增加', '睡眠浅'];
+  }
+  
+  // 经前阶段（黄体期末）
+  return ['想吃甜食', '情绪化', '易烦躁', '水肿感', '疲劳'];
+}
+
+/**
+ * 渲染推荐标签UI
+ * @param {number} cycleDay - 周期第几天
+ * @returns {string} HTML字符串
+ */
+function renderRecommendedChips(cycleDay) {
+  const chips = getRecommendedChipsForPhase(cycleDay);
+  if (chips.length === 0) return '';
+  
+  const chipsHtml = chips.map(chip => 
+    `<span class="chip" onclick="toggleChip(this)" style="background:var(--accent-light);color:var(--accent)">${chip}</span>`
+  ).join('');
+  
+  return `
+    <div style="margin-bottom:10px;padding:10px;background:#f8f9fa;border-radius:8px;border-left:2px solid var(--accent)">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">💡 本周期的你可能会有这些感受（点击选择）</div>
+      <div class="chips">${chipsHtml}</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * 🧩 模块11: 评分基准线 (SCORE_BENCHMARK)
+ * 根据周期阶段调整评分预期，避免焦虑
+ * ============================================================ */
+
+/**
+ * 获取周期阶段的合理评分预期
+ * @param {number} cycleDay - 周期第几天
+ * @returns {Object} 各项评分的预期范围
+ */
+function getScoreBenchmark(cycleDay) {
+  if (!cycleDay) return null;
+  
+  // 低激素期（月经期 + 卵泡期）- 高能量期
+  if (cycleDay >= 1 && cycleDay <= 14) {
+    return {
+      energy: { min: 6, max: 10, expected: 8 },
+      mood: { min: 6, max: 10, expected: 8 },
+      focus: { min: 6, max: 10, expected: 8 },
+      social: { min: 6, max: 10, expected: 7 },
+      appetite: { min: 4, max: 8, expected: 6 },
+      message: '低激素期：你的身体状态接近最佳，可以期待高能量表现'
+    };
+  }
+  
+  // 排卵期 - 峰值期
+  if (cycleDay >= 14 && cycleDay <= 16) {
+    return {
+      energy: { min: 7, max: 10, expected: 9 },
+      mood: { min: 7, max: 10, expected: 9 },
+      focus: { min: 7, max: 10, expected: 9 },
+      social: { min: 7, max: 10, expected: 9 },
+      appetite: { min: 5, max: 8, expected: 7 },
+      message: '排卵期：你的能量处于月度高峰，适合挑战重要目标'
+    };
+  }
+  
+  // 黄体期早期 - 开始下滑
+  if (cycleDay >= 17 && cycleDay <= 21) {
+    return {
+      energy: { min: 5, max: 8, expected: 6 },
+      mood: { min: 5, max: 8, expected: 6 },
+      focus: { min: 5, max: 8, expected: 6 },
+      social: { min: 4, max: 7, expected: 5 },
+      appetite: { min: 6, max: 9, expected: 7 },
+      message: '黄体期：身体进入恢复期，能量自然下降是正常的，不要苛责自己'
+    };
+  }
+  
+  // 经前阶段（黄体期末）- 低谷期
+  return {
+    energy: { min: 3, max: 7, expected: 5 },
+    mood: { min: 3, max: 7, expected: 5 },
+    focus: { min: 3, max: 7, expected: 5 },
+    social: { min: 3, max: 6, expected: 4 },
+    appetite: { min: 6, max: 10, expected: 8 },
+    message: '经前阶段：激素波动最大，疲劳和情绪波动是正常生理反应'
+  };
+}
+
+/**
+ * 渲染评分基准线提示
+ * @param {number} cycleDay - 周期第几天
+ * @returns {string} HTML字符串
+ */
+function renderScoreBenchmark(cycleDay) {
+  const benchmark = getScoreBenchmark(cycleDay);
+  if (!benchmark) return '';
+  
+  return `
+    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:8px;border-left:3px solid #f39c12">
+      <div style="font-size:12px;font-weight:600;color:#f39c12;margin-bottom:6px">📊 本期评分参考</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${benchmark.message}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px">
+        <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">精力 ${benchmark.energy.min}-${benchmark.energy.max}</span>
+        <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">心情 ${benchmark.mood.min}-${benchmark.mood.max}</span>
+        <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">专注 ${benchmark.focus.min}-${benchmark.focus.max}</span>
+        <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">社交 ${benchmark.social.min}-${benchmark.social.max}</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * 🧩 模块12: 饮食干预提醒 (DIET_REMINDER)
+ * 黄体期蛋白质+复合碳水干预
+ * ============================================================ */
+
+/**
+ * 获取饮食干预建议
+ * @param {number} cycleDay - 周期第几天
+ * @returns {Object|null} 饮食建议对象
+ */
+function getDietIntervention(cycleDay) {
+  if (!cycleDay) return null;
+  
+  // 黄体期 - 需要蛋白质和复合碳水
+  if (cycleDay >= 17 && cycleDay <= 28) {
+    const isLateLuteal = cycleDay >= 22;
+    return {
+      title: isLateLuteal ? '🍽️ 经前饮食重点' : '🍽️ 黄体期饮食重点',
+      priority: isLateLuteal ? 'high' : 'normal',
+      tips: [
+        { icon: '🥩', text: '每餐30g蛋白质（鸡蛋、鱼、豆腐）', why: '对抗分解代谢，稳定血糖' },
+        { icon: '🌾', text: '多吃复合碳水（燕麦、红薯、糙米）', why: '提供持续能量，减少甜食渴望' },
+        { icon: '🚫', text: '避免简单糖分', why: '血糖波动加剧情绪不稳' }
+      ],
+      mealIdeas: isLateLuteal 
+        ? ['早餐：燕麦+鸡蛋+坚果', '午餐：三文鱼+红薯+蔬菜', '加餐：希腊酸奶+蓝莓']
+        : ['早餐：全麦面包+鸡蛋+牛油果', '午餐：鸡胸肉+糙米+西兰花', '加餐：豆腐干+少量坚果']
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * 渲染饮食干预提醒
+ * @param {number} cycleDay - 周期第几天
+ * @returns {string} HTML字符串
+ */
+function renderDietIntervention(cycleDay) {
+  const diet = getDietIntervention(cycleDay);
+  if (!diet) return '';
+  
+  const tipsHtml = diet.tips.map(tip => `
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+      <span style="font-size:16px">${tip.icon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:500">${tip.text}</div>
+        <div style="font-size:11px;color:var(--muted)">${tip.why}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  const borderColor = diet.priority === 'high' ? '#e74c3c' : '#f39c12';
+  
+  return `
+    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);border-radius:8px;border-left:3px solid ${borderColor}">
+      <div style="font-size:13px;font-weight:600;color:${borderColor};margin-bottom:10px">${diet.title}</div>
+      ${tipsHtml}
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">💡 推荐搭配示例：</div>
+        <div style="font-size:11px;line-height:1.6">${diet.mealIdeas.join(' → ')}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * 🧩 模块14: 主动话题引擎 (PROACTIVE_TOPICS)
+ * AI主动找话题，不等待用户提问
+ * ============================================================ */
+
+// 主动话题生成器
+function generateProactiveTopic(cycleDay, phaseName, recentContext, lastUserMessage) {
+  const topics = [];
+  const hour = new Date().getHours();
+  
+  // 根据周期阶段生成话题
+  if (cycleDay >= 17 && cycleDay <= 28) {
+    // 黄体期/经前阶段
+    topics.push(
+      "诶姐妹，黄体期容易疲劳，今天感觉怎么样？",
+      "刚想到《微习惯》说的，黄体期用微习惯兜底，哪怕只做了1分钟也是胜利✓",
+      "孕激素上升期，想吃甜食是正常的生理反应，不是你的意志力问题😏",
+      "诶话说，你最近那个微习惯打卡怎么样了？"
+    );
+  } else if (cycleDay >= 14 && cycleDay <= 16) {
+    // 排卵期
+    topics.push(
+      "今天是能量高峰期诶！有什么重要的事趁现在做掉？",
+      "排卵期社交欲强，要不要约朋友出去浪？",
+      "诶我刚发现，排卵期适合做突破性的挑战，你有什么想尝试的吗？"
+    );
+  } else {
+    // 低激素期
+    topics.push(
+      "低激素期精力不错诶，今天有什么计划？",
+      "诶话说，你最近在读什么书？《遥远的救世主》看完了吗？",
+      "卵泡期适合做高强度工作，有什么难题趁现在解决掉？"
+    );
+  }
+  
+  // 根据时间段生成话题
+  if (hour >= 6 && hour < 12) {
+    topics.push("早！新的一天开始了，今天有什么期待？");
+  } else if (hour >= 14 && hour < 17) {
+    topics.push("下午容易犯困诶，要不要站起来活动一下？");
+  } else if (hour >= 21) {
+    topics.push("晚上了诶，今天过得怎么样？有什么想聊的吗？");
+  }
+  
+  // 根据用户近期状态跟进
+  if (recentContext && recentContext.dailySummaries) {
+    const yesterday = recentContext.dailySummaries.find(d => d.dayOffset === -1);
+    if (yesterday && yesterday.avgScores) {
+      if (yesterday.avgScores.mood < 5) {
+        topics.push("昨天心情不太好，今天感觉好些了吗？");
+      }
+      if (yesterday.avgScores.energy < 5) {
+        topics.push("昨天你说精力不好，今天恢复了吗？");
+      }
+    }
+  }
+  
+  // 随机返回一个话题
+  return topics[Math.floor(Math.random() * topics.length)];
+}
+
+// 主动话题定时器
+let proactiveTopicTimer = null;
+const PROACTIVE_DELAY = 3 * 60 * 1000; // 3分钟无互动后触发
+
+function startProactiveTopicTimer() {
+  if (proactiveTopicTimer) clearTimeout(proactiveTopicTimer);
+  
+  proactiveTopicTimer = setTimeout(async () => {
+    const messagesEl = document.getElementById('ai-messages');
+    if (!messagesEl) return;
+    
+    // 检查最后一条消息是否来自AI（如果是，说明用户没回复，触发主动话题）
+    const lastMsg = aiConversation[aiConversation.length - 1];
+    if (lastMsg && lastMsg.role === 'assistant') {
+      // 获取当前周期信息
+      const cycleDay = await getCycleDay(currentRecDate);
+      const phase = getPhase(cycleDay);
+      
+      // 获取近期上下文
+      const recentContext = await getRecentContext(currentRecDate);
+      
+      // 生成主动话题
+      const topic = generateProactiveTopic(cycleDay, phase?.name, recentContext);
+      
+      if (topic) {
+        // 显示AI主动消息
+        const html = '<div class="ai-msg ai proactive">💬 ' + topic + '</div>';
+        messagesEl.innerHTML += html;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        
+        // 添加到对话历史
+        aiConversation.push({ 
+          role: 'assistant', 
+          content: topic,
+          isProactive: true 
+        });
+        
+        // 保存对话
+        await saveAIConversation(currentRecDate, aiConversation);
+      }
+    }
+  }, PROACTIVE_DELAY);
+}
+
+// 重置定时器（用户发送消息时调用）
+function resetProactiveTimer() {
+  startProactiveTopicTimer();
+}
+
+/* ============================================================
+ * 🧩 模块15: 长期记忆学习系统 (LONG_TERM_MEMORY)
+ * AI学习用户偏好、成功习惯、反复抱怨的事
+ * ============================================================ */
+
+// 长期记忆数据结构
+const LONG_TERM_MEMORY_KEY = 'smc_longterm_memory_v1';
+
+// 初始化/获取长期记忆
+function getLongTermMemory() {
+  const stored = localStorage.getItem(LONG_TERM_MEMORY_KEY);
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return {
+    userPreferences: {},      // 用户偏好（喜欢的书、食物等）
+    successfulHabits: [],     // 成功的小习惯
+    recurringComplaints: [],  // 反复抱怨的事
+    positivePatterns: [],     // 积极行为模式
+    cycleInsights: {},        // 周期相关的个人洞察
+    lastUpdated: Date.now()
+  };
+}
+
+// 保存长期记忆
+function saveLongTermMemory(memory) {
+  memory.lastUpdated = Date.now();
+  localStorage.setItem(LONG_TERM_MEMORY_KEY, JSON.stringify(memory));
+}
+
+// 从对话中提取洞察
+function extractInsightsFromConversation(userMsg, aiReply, cycleDay) {
+  const memory = getLongTermMemory();
+  let updated = false;
+  
+  // 1. 提取偏好（喜欢的书籍、食物、活动等）
+  const bookKeywords = ['遥远的救世主', '天幕红尘', '福格', '微习惯', '在读', '喜欢', '推荐'];
+  const foodKeywords = ['喜欢', '爱吃', '讨厌', '不吃', '奶茶', '咖啡', '甜食'];
+  const activityKeywords = ['喜欢', '享受', '讨厌', '烦', '运动', '瑜伽', '跑步', '散步'];
+  
+  // 检测书籍偏好
+  if (bookKeywords.some(k => userMsg.includes(k))) {
+    const bookMatch = userMsg.match(/喜欢[《"'](.+?)[》"']/);
+    if (bookMatch && !memory.userPreferences.favoriteBooks?.includes(bookMatch[1])) {
+      memory.userPreferences.favoriteBooks = memory.userPreferences.favoriteBooks || [];
+      memory.userPreferences.favoriteBooks.push(bookMatch[1]);
+      updated = true;
+    }
+  }
+  
+  // 检测成功的小习惯
+  const habitSuccessKeywords = ['做到了', '完成了', '坚持了', '打卡成功', '微习惯'];
+  if (habitSuccessKeywords.some(k => userMsg.includes(k) || aiReply.includes(k))) {
+    const habitMatch = userMsg.match(/(每天|坚持|打卡|做了)(.+?)(打卡|天|次|页|个)/);
+    if (habitMatch) {
+      const habit = habitMatch[2].trim();
+      if (!memory.successfulHabits.some(h => h.name === habit)) {
+        memory.successfulHabits.push({
+          name: habit,
+          firstDetected: Date.now(),
+          lastMentioned: Date.now(),
+          count: 1,
+          cycleContext: cycleDay
+        });
+        updated = true;
+      } else {
+        const existing = memory.successfulHabits.find(h => h.name === habit);
+        existing.count++;
+        existing.lastMentioned = Date.now();
+        updated = true;
+      }
+    }
+  }
+  
+  // 3. 检测反复抱怨的事
+  const complaintKeywords = ['累', '烦', '压力大', '焦虑', '睡不好', '不想动', '困'];
+  if (complaintKeywords.some(k => userMsg.includes(k))) {
+    const complaint = complaintKeywords.find(k => userMsg.includes(k));
+    const existing = memory.recurringComplaints.find(c => c.keyword === complaint);
+    if (!existing) {
+      memory.recurringComplaints.push({
+        keyword: complaint,
+        firstMentioned: Date.now(),
+        lastMentioned: Date.now(),
+        count: 1,
+        cycleContext: cycleDay
+      });
+      updated = true;
+    } else {
+      existing.count++;
+      existing.lastMentioned = Date.now();
+      updated = true;
+    }
+  }
+  
+  // 4. 周期洞察（用户在特定周期的表现）
+  if (cycleDay) {
+    const phase = getPhase(cycleDay);
+    if (phase) {
+      memory.cycleInsights[phase.name] = memory.cycleInsights[phase.name] || {
+        mentionedCount: 0,
+        commonMoods: [],
+        successfulStrategies: []
+      };
+      memory.cycleInsights[phase.name].mentionedCount++;
+      
+      // 如果AI建议了有效的方法，记录下来
+      if (aiReply.includes('试试') || aiReply.includes('建议')) {
+        const strategy = aiReply.match(/试试(.+?)[。！]/);
+        if (strategy) {
+          memory.cycleInsights[phase.name].successfulStrategies.push({
+            strategy: strategy[1],
+            date: Date.now()
+          });
+          updated = true;
+        }
+      }
+    }
+  }
+  
+  if (updated) {
+    saveLongTermMemory(memory);
+  }
+  
+  return memory;
+}
+
+// 格式化长期记忆为Prompt文本
+function formatLongTermMemoryForPrompt() {
+  const memory = getLongTermMemory();
+  let text = '';
+  
+  // 用户偏好
+  if (memory.userPreferences.favoriteBooks?.length > 0) {
+    text += `- 喜欢的书：${memory.userPreferences.favoriteBooks.join('、')}\n`;
+  }
+  
+  // 成功的小习惯（按次数排序，取前3）
+  const topHabits = memory.successfulHabits
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+  if (topHabits.length > 0) {
+    text += `- 成功的微习惯：${topHabits.map(h => h.name).join('、')}\n`;
+  }
+  
+  // 反复抱怨的事（如果次数>2）
+  const frequentComplaints = memory.recurringComplaints
+    .filter(c => c.count > 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+  if (frequentComplaints.length > 0) {
+    text += `- 反复出现的困扰：${frequentComplaints.map(c => c.keyword).join('、')}\n`;
+  }
+  
+  // 周期洞察
+  if (Object.keys(memory.cycleInsights).length > 0) {
+    text += `- 周期规律：\n`;
+    for (const [phase, insight] of Object.entries(memory.cycleInsights)) {
+      if (insight.successfulStrategies.length > 0) {
+        const recentStrategy = insight.successfulStrategies.slice(-1)[0];
+        text += `  · ${phase}的有效方法：${recentStrategy.strategy}\n`;
+      }
+    }
+  }
+  
+  return text || '暂无长期记忆';
+}
+
+// 根据长期记忆生成个性化建议
+function getPersonalizedAdvice(context) {
+  const memory = getLongTermMemory();
+  const advice = [];
+  
+  // 如果用户有成功的微习惯，在ta想放弃时提醒
+  if (memory.successfulHabits.length > 0 && context.userWantsToGiveUp) {
+    const habit = memory.successfulHabits[0];
+    advice.push(`你之前${habit.name}坚持得很好诶，用同样的微习惯策略！`);
+  }
+  
+  // 如果用户反复抱怨某件事，给出针对性建议
+  const frequentComplaint = memory.recurringComplaints
+    .filter(c => c.count > 2)
+    .sort((a, b) => b.count - a.count)[0];
+  if (frequentComplaint && context.currentMood === frequentComplaint.keyword) {
+    advice.push(`我注意到你经常说"${frequentComplaint.keyword}"，这是周期第${context.cycleDay}天的正常反应，不是你的问题😏`);
+  }
+  
+  return advice;
+}
+
+// 修改原有的getMemory函数，整合长期记忆
+async function getMemory(type) {
+  if (type === 'longterm') {
+    return formatLongTermMemoryForPrompt();
+  }
+  return '';
+}
+
+// 在AI对话结束后提取洞察（需要在sendAI函数中调用）
+async function learnFromConversation(userMsg, aiReply, cycleDay) {
+  extractInsightsFromConversation(userMsg, aiReply, cycleDay);
+}
+
+/* ============================================================
+ * 🧩 模块13: 待扩展模块预留位置
+ * ============================================================ */
+
+</script>
+</body>
+</html>
