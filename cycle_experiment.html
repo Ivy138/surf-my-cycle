@@ -1711,7 +1711,7 @@ function nextMonth(which) {
 }
 
 let currentRecDate = null;
-let lastSelectedDate = null;
+let userManuallySelectedSlot = false;
 
 function getTimeSlotByHour(hour) {
   if (hour < 12) return 'morning';
@@ -1727,8 +1727,7 @@ function syncTimeSlotTabs() {
 
 function selectTimeSlot(el) {
   currentTimeSlot = el.getAttribute('data-time');
-  // 更新 lastSelectedDate，这样 loadRecordPanel 就不会错误地重置时段
-  lastSelectedDate = currentRecDate;
+  userManuallySelectedSlot = true;
   syncTimeSlotTabs();
   loadRecordPanel(currentRecDate);
 }
@@ -1752,11 +1751,11 @@ async function loadRecordPanel(dateStr) {
   document.getElementById('rec-form').style.display = 'flex';
 
   const rec = await getRecord(dateStr);
-  // 切换日期时按当前时间自动选时段，同日期内切换时段时保持用户选择
-  if (lastSelectedDate !== dateStr) {
+  // 只有用户没有手动选择时段时，才按当前时间自动选时段
+  if (!userManuallySelectedSlot) {
     currentTimeSlot = getTimeSlotByHour(new Date().getHours());
   }
-  lastSelectedDate = dateStr;
+  userManuallySelectedSlot = false;
   syncTimeSlotTabs();
   const slot = rec && rec.slots ? (rec.slots[currentTimeSlot] || {}) : {};
   document.getElementById('rec-note').value = slot.note || '';
