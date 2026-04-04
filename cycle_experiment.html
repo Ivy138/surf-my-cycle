@@ -1727,6 +1727,8 @@ function syncTimeSlotTabs() {
 
 function selectTimeSlot(el) {
   currentTimeSlot = el.getAttribute('data-time');
+  // 更新 lastSelectedDate，这样 loadRecordPanel 就不会错误地重置时段
+  lastSelectedDate = currentRecDate;
   syncTimeSlotTabs();
   loadRecordPanel(currentRecDate);
 }
