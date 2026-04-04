@@ -1,0 +1,43 @@
+# GitHub Pages 部署指南
+
+## 第一步：上传文件（30秒）
+1. 打开 https://github.com/Ivy138/surf-my-cycle
+2. 点击 "Add file" → "Upload files"
+3. 把 `cycle_experiment.html` 拖进去
+4. 在 "Commit changes" 处直接点绿色的 "Commit changes" 按钮
+
+## 第二步：开启 GitHub Pages（1分钟）
+1. 在同一页面，点击顶部的 "Settings" 标签
+2. 左侧菜单点击 "Pages"
+3. 在 "Source" 部分：
+   - 选择 "Deploy from a branch"
+   - Branch 选 "main"
+   - 文件夹选 "/ (root)"
+4. 点击 "Save"
+5. 等待1-2分钟（页面会自动刷新显示链接）
+
+## 第三步：访问你的网站
+链接格式：`https://ivy138.github.io/surf-my-cycle/`
+
+---
+
+## 如果上传时遇到 "Authentication required"
+
+### 方案A：使用 GitHub Desktop（推荐）
+1. 下载 https://desktop.github.com
+2. 登录你的 GitHub 账号
+3. 拖拽项目文件夹到 Desktop
+4. 点击 "Publish repository"
+5. 然后按上面的第二步开启 Pages
+
+### 方案B：邮件发给我 Token（我可以帮你部署）
+1. 打开 https://github.com/settings/tokens/new
+2. 勾选 "repo" 权限
+3. 生成 Token（复制下来）
+4. 微信/邮件发给我，我帮你一键部署
+
+---
+
+## 快速验证
+部署成功后，手机浏览器输入链接即可访问。
+数据会保存在 Supabase，手机电脑同步。

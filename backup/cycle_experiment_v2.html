@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surf My Cycle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f0f2;color:#333;min-height:100vh}
+:root{--accent:#e84a6a;--accent-light:#fce4ea;--bg:#f8f0f2;--surface:#fff;--border:#e8d5da;--text:#2d1f24;--muted:#9a7a82;--radius:12px;--shadow:0 2px 12px rgba(232,74,106,.1)}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;box-shadow:var(--shadow)}
+header h1{font-size:18px;font-weight:700;color:var(--accent)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{padding:8px 18px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);transition:.2s;border:none;background:transparent}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){background:var(--accent-light);color:var(--accent)}
+.page{display:none;height:calc(100vh - 56px)}
+.page.active{display:flex}
+#page-record{flex-direction:row}
+.cal-panel{width:58%;padding:20px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 4px}
+.cal-nav button{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;color:var(--accent)}
+.cal-nav h3{font-size:16px;font-weight:600}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-head{text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding:4px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;background:var(--surface);border:2px solid transparent;position:relative;transition:.15s;min-height:40px}
+.cal-day:hover{border-color:var(--accent);background:var(--accent-light)}
+.cal-day.other-month{opacity:.3}
+.cal-day.today{border-color:var(--accent);font-weight:700}
+.cal-day.selected{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cal-day.selected:hover{background:var(--accent)}
+.cal-day.has-data::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--accent);position:absolute;bottom:4px}
+.cal-day.selected.has-data::after{background:#fff}
+.time-tabs{display:flex;gap:4px;margin-bottom:12px}
+.time-tab{padding:6px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);cursor:pointer;background:var(--surface);color:var(--muted);transition:.15s}
+.time-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.time-dot{width:6px;height:6px;border-radius:50%;position:absolute;top:4px;right:4px}
+.time-dot.morning{background:#3498db}
+.time-dot.afternoon{background:#f39c12}
+.time-dot.evening{background:#9b59b6}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 0}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.rec-panel{width:42%;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.rec-date-info{background:var(--accent-light);border-radius:var(--radius);padding:14px}
+.rec-date-info h2{font-size:18px;font-weight:700;color:var(--accent)}
+.rec-date-info .phase-tag{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;color:#fff}
+.rec-date-info .tip{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.5}
+.card{background:var(--bg);border-radius:var(--radius);padding:14px;border:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;resize:none;font-family:inherit;background:var(--surface)}
+textarea:focus{outline:none;border-color:var(--accent)}
+.slider-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.slider-row label{width:40px;font-size:13px;color:var(--text)}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-row span{width:24px;text-align:right;font-size:13px;font-weight:600;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;border:1px solid var(--border);cursor:pointer;background:var(--surface);transition:.15s}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+select{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--surface);font-family:inherit}
+select:focus{outline:none;border-color:var(--accent)}
+.save-btn{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
+.save-btn:hover{opacity:.9}
+.save-btn:active{transform:scale(.98)}
+.save-btn.saved{background:#c73e5a}
+.empty-state{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
+#page-calendar{flex-direction:row}
+#page-calendar .cal-panel{width:60%}
+.detail-panel{width:40%;background:var(--surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto}
+.detail-panel h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.detail-empty{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.detail-row .label{color:var(--muted)}
+.detail-row .value{font-weight:600;color:var(--text)}
+#page-analysis{flex-direction:column;padding:16px;overflow-y:auto;gap:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:14px;text-align:center;border:1px solid var(--border)}
+.stat-card .num{font-size:24px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--border)}
+.chart-card h3{font-size:14px;font-weight:600;margin-bottom:10px}
+canvas{width:100%!important}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-box{background:var(--surface);border-radius:16px;padding:24px;width:340px;max-width:90vw}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.form-row input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+.form-row input:focus{outline:none;border-color:var(--accent)}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.btn-cancel{background:var(--bg);color:var(--muted)}
+.btn-save{background:var(--accent);color:#fff}
+@media(max-width:700px){
+  #page-record,#page-calendar{flex-direction:column}
+  .cal-panel,.rec-panel,.detail-panel{width:100%;height:auto}
+  .rec-panel,.detail-panel{border-left:none;border-top:1px solid var(--border)}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Surf My Cycle</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('record',this)">记录</button>
+    <button class="tab" onclick="showPage('analysis',this)">分析</button>
+  </div>
+  <button class="tab" onclick="openSettings()" style="margin-left:8px">设置</button>
+</header>
+
+<div id="page-record" class="page active">
+  <div class="cal-panel">
+    <div class="cal-nav">
+      <button onclick="prevMonth('r')">上月</button>
+      <h3 id="r-month-title"></h3>
+      <button onclick="nextMonth('r')">下月</button>
+    </div>
+    <div class="cal-grid" id="r-grid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>月经期</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>卵泡期</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e91e63"></div>排卵期</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>黄体期</div>
+    </div>
+  </div>
+  <div class="rec-panel" id="rec-panel">
+    <div class="rec-date-info" id="rec-header"><div class="empty-state">点击日历中的日期开始记录</div></div>
+    <div id="rec-form" style="display:none;flex-direction:column;gap:14px">
+      <div class="time-tabs">
+        <div class="time-tab active" data-time="morning" onclick="selectTimeSlot(this)">🌅 早上</div>
+        <div class="time-tab" data-time="afternoon" onclick="selectTimeSlot(this)">☀️ 下午</div>
+        <div class="time-tab" data-time="evening" onclick="selectTimeSlot(this)">🌙 晚上</div>
+      </div>
+      <div class="card">
+        <div class="card-title">此刻感受</div>
+        <textarea id="rec-note" rows="2" placeholder="记录这个时段的感受..."></textarea>
+      </div>
+      <div class="card">
+        <div class="card-title">状态评分</div>
+        <div class="slider-row"><label>心情</label><input type="range" id="s-mood" min="1" max="10" value="5" oninput="document.getElementById('v-mood').textContent=this.value"><span id="v-mood">5</span></div>
+        <div class="slider-row"><label>能量</label><input type="range" id="s-energy" min="1" max="10" value="5" oninput="document.getElementById('v-energy').textContent=this.value"><span id="v-energy">5</span></div>
+        <div class="slider-row"><label>效率</label><input type="range" id="s-focus" min="1" max="10" value="5" oninput="document.getElementById('v-focus').textContent=this.value"><span id="v-focus">5</span></div>
+        <div class="slider-row"><label>社交</label><input type="range" id="s-social" min="1" max="10" value="5" oninput="document.getElementById('v-social').textContent=this.value"><span id="v-social">5</span></div>
+        <div class="slider-row"><label>食欲</label><input type="range" id="s-appetite" min="1" max="10" value="5" oninput="document.getElementById('v-appetite').textContent=this.value"><span id="v-appetite">5</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">全天生理状态</div>
+        <select id="rec-period">
+          <option value="">无月经</option>
+          <option value="light">月经轻量</option>
+          <option value="medium">月经中量</option>
+          <option value="heavy">月经大量</option>
+          <option value="spotting">点滴出血</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-title">全天标签</div>
+        <div class="chips">
+          <div class="chip" onclick="toggleChip(this)">甜食</div>
+          <div class="chip" onclick="toggleChip(this)">咸味</div>
+          <div class="chip" onclick="toggleChip(this)">碳水</div>
+          <div class="chip" onclick="toggleChip(this)">蛋白质</div>
+          <div class="chip" onclick="toggleChip(this)">辛辣</div>
+          <div class="chip" onclick="toggleChip(this)">冷饮</div>
+          <div class="chip" onclick="toggleChip(this)">情绪化</div>
+          <div class="chip" onclick="toggleChip(this)">专注</div>
+          <div class="chip" onclick="toggleChip(this)">创意</div>
+          <div class="chip" onclick="toggleChip(this)">理性</div>
+          <div class="chip" onclick="toggleChip(this)">躁动</div>
+          <div class="chip" onclick="toggleChip(this)">平静</div>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveRecord()">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-analysis" class="page">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num" id="stat-days">0</div><div class="lbl">累计记录天数</div></div>
+    <div class="stat-card"><div class="num" id="stat-mood">-</div><div class="lbl">平均心情</div></div>
+    <div class="stat-card"><div class="num" id="stat-streak">0</div><div class="lbl">连续记录天数</div></div>
+  </div>
+  <div class="chart-card"><h3>最近30天 心情与能量趋势</h3><canvas id="trend-chart" height="200"></canvas></div>
+  <div class="chart-card"><h3>各周期阶段平均评分</h3><canvas id="phase-chart" height="200"></canvas></div>
+</div>
+
+<div class="modal" id="settings-modal">
+  <div class="modal-box">
+    <h3>周期设置</h3>
+    <div class="form-row"><label>上次月经开始日期</label><input type="date" id="cfg-last-period"></div>
+    <div class="form-row"><label>周期长度（天）</label><input type="number" id="cfg-cycle-len" value="28" min="21" max="45"></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeSettings()">取消</button><button class="btn-save" onclick="saveSettings()">保存</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function getData() { try { return JSON.parse(localStorage.getItem('smc_data') || '[]'); } catch(e) { return []; } }
+function setData(arr) { localStorage.setItem('smc_data', JSON.stringify(arr)); }
+function getConfig() { try { return JSON.parse(localStorage.getItem('smc_config') || '{}'); } catch(e) { return {}; } }
+function setConfig(cfg) { localStorage.setItem('smc_config', JSON.stringify(cfg)); }
+function getRecord(dateStr) { return getData().find(d => d.date === dateStr) || null; }
+
+const TIME_SLOTS = {
+  morning: { name: '早上', color: '#3498db' },
+  afternoon: { name: '下午', color: '#f39c12' },
+  evening: { name: '晚上', color: '#9b59b6' }
+};
+
+function getCycleDay(dateStr) {
+  const cfg = getConfig();
+  if (!cfg.lastPeriod) return null;
+  const last = new Date(cfg.lastPeriod + 'T00:00:00');
+  const target = new Date(dateStr + 'T00:00:00');
+  const cycleLen = cfg.cycleLen || 28;
+  let diff = Math.round((target - last) / 86400000);
+  if (diff < 0) diff = ((diff % cycleLen) + cycleLen) % cycleLen;
+  return (diff % cycleLen) + 1;
+}
+
+function getPhase(day) {
+  if (!day) return null;
+  if (day >= 1 && day <= 5) return { name:'月经期', color:'#e74c3c', tip:'雌孕激素低谷，建议休息' };
+  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#f39c12', tip:'雌激素上升，精力逐渐恢复' };
+  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#e91e63', tip:'雌激素高峰，社交欲强' };
+  if (day >= 17 && day <= 28) return { name:'黄体期', color:'#9b59b6', tip:'孕激素升高，适合细致工作' };
+  return null;
+}
+
+const rState = { year: new Date().getFullYear(), month: new Date().getMonth(), selected: null };
+let currentTimeSlot = 'morning';
+
+function renderCalendar(gridId, titleId, state, onClickDay) {
+  const grid = document.getElementById(gridId);
+  const title = document.getElementById(titleId);
+  if (!grid || !title) return;
+
+  const { year, month } = state;
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  title.textContent = year + '年 ' + monthNames[month];
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+  const data = getData();
+
+  let html = '';
+  ['日','一','二','三','四','五','六'].forEach(d => { html += '<div class="cal-head">' + d + '</div>'; });
+
+  const prevDays = new Date(year, month, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += '<div class="cal-day other-month"><span>' + (prevDays - i) + '</span></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const rec = data.find(r => r.date === ds);
+    const cycleDay = getCycleDay(ds);
+    const phase = getPhase(cycleDay);
+
+    let cls = 'cal-day';
+    if (ds === today) cls += ' today';
+    if (rec && rec.slots && Object.keys(rec.slots).length > 0) cls += ' has-data';
+    if (state.selected === ds) cls += ' selected';
+
+    let dots = '';
+    if (rec && rec.slots) {
+      Object.keys(rec.slots).forEach(slot => {
+        if (rec.slots[slot] && rec.slots[slot].mood) {
+          dots += '<div class="time-dot ' + slot + '"></div>';
+        }
+      });
+    }
+    const phaseDot = phase && !dots ? '<div class="phase-dot" style="background:' + phase.color + '"></div>' : '';
+    html += '<div class="' + cls + '" data-date="' + ds + '">' + (dots || phaseDot) + '<span>' + d + '</span></div>';
+  }
+
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    html += '<div class="cal-day other-month"><span>' + d + '</span></div>';
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-day[data-date]').forEach(el => {
+    el.addEventListener('click', () => {
+      const ds = el.getAttribute('data-date');
+      state.selected = ds;
+      renderCalendar(gridId, titleId, state, onClickDay);
+      onClickDay(ds);
+    });
+  });
+}
+
+function prevMonth(which) {
+  const s = rState;
+  s.month--;
+  if (s.month < 0) { s.month = 11; s.year--; }
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+function nextMonth(which) {
+  const s = rState;
+  s.month++;
+  if (s.month > 11) { s.month = 0; s.year++; }
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+
+let currentRecDate = null;
+
+function selectTimeSlot(el) {
+  currentTimeSlot = el.getAttribute('data-time');
+  document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadRecordPanel(currentRecDate);
+}
+
+function loadRecordPanel(dateStr) {
+  currentRecDate = dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  const weekNames = ['日','一','二','三','四','五','六'];
+  const label = (d.getMonth()+1) + '月' + d.getDate() + '日 周' + weekNames[d.getDay()];
+  const cycleDay = getCycleDay(dateStr);
+  const phase = getPhase(cycleDay);
+
+  let headerHtml = '<h2>' + label + '</h2>';
+  if (cycleDay) {
+    headerHtml += '<div>Day ' + cycleDay + (phase ? ' · <span class="phase-tag" style="background:' + phase.color + '">' + phase.name + '</span>' : '') + '</div>';
+    if (phase) headerHtml += '<div class="tip">' + phase.tip + '</div>';
+  }
+  document.getElementById('rec-header').innerHTML = headerHtml;
+  document.getElementById('rec-form').style.display = 'flex';
+
+  const rec = getRecord(dateStr);
+  const slot = rec && rec.slots ? (rec.slots[currentTimeSlot] || {}) : {};
+  document.getElementById('rec-note').value = slot.note || '';
+  ['mood','energy','focus','social','appetite'].forEach(k => {
+    const val = slot[k] || 5;
+    document.getElementById('s-' + k).value = val;
+    document.getElementById('v-' + k).textContent = val;
+  });
+  document.getElementById('rec-period').value = rec ? (rec.period || '') : '';
+  document.querySelectorAll('#rec-form .chip').forEach(c => {
+    const isOn = rec && rec.chips && rec.chips.includes(c.textContent);
+    c.classList.toggle('on', isOn);
+  });
+
+  const btn = document.querySelector('.save-btn');
+  const recSaved = rec && rec.slots && rec.slots[currentTimeSlot] && rec.slots[currentTimeSlot].mood;
+  btn.classList.toggle('saved', recSaved);
+  btn.textContent = recSaved ? '更新记录' : '保存记录';
+}
+
+function toggleChip(el) { el.classList.toggle('on'); }
+
+function saveRecord() {
+  if (!currentRecDate) return;
+  const chips = [];
+  document.querySelectorAll('#rec-form .chip.on').forEach(c => chips.push(c.textContent));
+  
+  const existing = getRecord(currentRecDate) || { date: currentRecDate, slots: {} };
+  if (!existing.slots) existing.slots = {};
+  
+  existing.slots[currentTimeSlot] = {
+    note: document.getElementById('rec-note').value,
+    mood: document.getElementById('s-mood').value,
+    energy: document.getElementById('s-energy').value,
+    focus: document.getElementById('s-focus').value,
+    social: document.getElementById('s-social').value,
+    appetite: document.getElementById('s-appetite').value
+  };
+  existing.period = document.getElementById('rec-period').value;
+  existing.chips = chips;
+  
+  const data = getData().filter(d => d.date !== currentRecDate);
+  data.push(existing);
+  setData(data);
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  const btn = document.querySelector('.save-btn');
+  btn.classList.add('saved');
+  btn.textContent = '已保存 · 可更新';
+  setTimeout(() => { 
+    btn.textContent = '更新记录';
+  }, 1500);
+}
+
+let trendChart = null, phaseChart = null;
+
+function renderAnalysis() {
+  const data = getData().sort((a,b) => a.date.localeCompare(b.date));
+  let totalRecords = 0;
+  let totalMood = 0;
+  let totalEnergy = 0;
+  let count = 0;
+  
+  data.forEach(d => {
+    if (d.slots) {
+      Object.values(d.slots).forEach(slot => {
+        if (slot.mood) {
+          totalMood += +slot.mood;
+          totalEnergy += +slot.energy;
+          count++;
+        }
+      });
+    }
+  });
+  totalRecords = count;
+  
+  document.getElementById('stat-days').textContent = totalRecords;
+  if (count > 0) {
+    document.getElementById('stat-mood').textContent = (totalMood / count).toFixed(1);
+  }
+  
+  let streak = 0;
+  const today = new Date().toISOString().split('T')[0];
+  let check = new Date(today + 'T00:00:00');
+  while (true) {
+    const ds = check.toISOString().split('T')[0];
+    const rec = getRecord(ds);
+    if (!rec || !rec.slots || Object.keys(rec.slots).length === 0) break;
+    streak++;
+    check.setDate(check.getDate() - 1);
+  }
+  document.getElementById('stat-streak').textContent = streak;
+
+  const last30 = data.slice(-30);
+  const labels = [];
+  const moods = [];
+  const energies = [];
+  
+  last30.forEach(d => {
+    if (d.slots) {
+      let dayMood = 0, dayEnergy = 0, dayCount = 0;
+      Object.values(d.slots).forEach(slot => {
+        if (slot.mood) {
+          dayMood += +slot.mood;
+          dayEnergy += +slot.energy;
+          dayCount++;
+        }
+      });
+      if (dayCount > 0) {
+        labels.push(d.date.slice(5));
+        moods.push((dayMood / dayCount).toFixed(1));
+        energies.push((dayEnergy / dayCount).toFixed(1));
+      }
+    }
+  });
+
+  if (trendChart) trendChart.destroy();
+  if (labels.length > 0) {
+    trendChart = new Chart(document.getElementById('trend-chart'), {
+      type: 'line',
+      data: { labels, datasets: [
+        { label:'心情', data:moods, borderColor:'#e84a6a', backgroundColor:'rgba(232,74,106,.1)', tension:.4, fill:true },
+        { label:'能量', data:energies, borderColor:'#f39c12', backgroundColor:'rgba(243,156,18,.1)', tension:.4, fill:true }
+      ]},
+      options: { plugins:{ legend:{ position:'top' } }, scales:{ y:{ min:1,max:10 } }, responsive:true }
+    });
+  }
+
+  const phaseNames = ['月经期','卵泡期','排卵期','黄体期'];
+  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6'];
+  const phaseData = phaseNames.map(pn => {
+    let total = 0, cnt = 0;
+    data.forEach(d => {
+      const cd = getCycleDay(d.date);
+      const ph = getPhase(cd);
+      if (ph && ph.name === pn && d.slots) {
+        Object.values(d.slots).forEach(slot => {
+          if (slot.mood) {
+            total += +slot.mood;
+            cnt++;
+          }
+        });
+      }
+    });
+    return cnt ? (total / cnt).toFixed(1) : 0;
+  });
+
+  if (phaseChart) phaseChart.destroy();
+  phaseChart = new Chart(document.getElementById('phase-chart'), {
+    type: 'bar',
+    data: { labels: phaseNames, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
+    options: { plugins:{ legend:{ display:false } }, scales:{ y:{ min:0,max:10 } }, responsive:true }
+  });
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'analysis') renderAnalysis();
+}
+
+function openSettings() {
+  const cfg = getConfig();
+  document.getElementById('cfg-last-period').value = cfg.lastPeriod || '';
+  document.getElementById('cfg-cycle-len').value = cfg.cycleLen || 28;
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+function saveSettings() {
+  setConfig({ lastPeriod: document.getElementById('cfg-last-period').value, cycleLen: parseInt(document.getElementById('cfg-cycle-len').value) || 28 });
+  closeSettings();
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  const today = new Date().toISOString().split('T')[0];
+  rState.selected = today;
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  loadRecordPanel(today);
+});
+</script>
+</body>
+</html>

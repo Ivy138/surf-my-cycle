@@ -96,6 +96,8 @@ select:focus{outline:none;border-color:#d4c4e0}
 .ai-msg.ai del{color:#999}
 .ai-msg.ai hr{border:none;border-top:1px solid var(--border);margin:10px 0}
 .ai-msg.user{background:var(--accent-light);border-radius:12px 12px 4px 12px}
+.streaming-cursor{color:var(--accent);animation:cursor-blink 1s infinite}
+@keyframes cursor-blink{0%,50%{opacity:1}51%,100%{opacity:0}}
 .ai-thinking{margin-bottom:8px}
 .ai-thinking summary{cursor:pointer;color:var(--muted);font-size:11px;padding:4px 8px;background:#f5f5f5;border-radius:6px}
 .ai-thinking .thinking-content{font-size:11px;color:#666;padding:8px;margin-top:4px;background:#fafafa;border-radius:6px;font-style:italic}
@@ -147,8 +149,9 @@ canvas{width:100%!important}
 .modal-box h3{font-size:14px;font-weight:700;margin-bottom:14px}
 .form-row{margin-bottom:12px}
 .form-row label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
-.form-row input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit}
-.form-row input:focus{outline:none;border-color:var(--accent)}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:#fff}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--accent)}
+.form-row textarea{resize:vertical;min-height:82px}
 .modal-btns{display:flex;gap:8px;margin-top:14px}
 .modal-btns button{flex:1;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none}
 .btn-cancel{background:var(--bg);color:var(--muted)}
@@ -159,10 +162,119 @@ canvas{width:100%!important}
   .rec-panel,.detail-panel{border-left:none;border-top:1px solid var(--border)}
   .stats-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ===== 登录页面样式 ===== */
+.login-container{position:fixed;inset:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25)}
+.login-brand{text-align:center;margin-bottom:32px}
+.login-brand h1{font-size:28px;font-weight:800;color:#2d1f24;margin-bottom:8px;letter-spacing:-0.5px}
+.login-brand .tagline{font-size:16px;color:#9a7a82;font-weight:400}
+.login-brand .highlight{color:var(--accent);font-weight:600}
+.login-input-group{margin-bottom:20px}
+.login-input-group label{display:block;font-size:14px;font-weight:500;color:#4a4a4a;margin-bottom:6px}
+.login-input-group input{width:100%;padding:14px 16px;border:2px solid #e8d5da;border-radius:12px;font-size:15px;font-family:inherit;background:#fafafa;transition:all 0.2s}
+.login-input-group input:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(232,74,106,0.1)}
+.login-btn{width:100%;padding:14px 24px;background:linear-gradient(135deg,var(--accent) 0%,#c73e5a 100%);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(232,74,106,0.3)}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,74,106,0.4)}
+.login-btn:active{transform:translateY(0)}
+.login-btn.secondary{background:#f5f5f5;color:#666;box-shadow:none}
+.login-btn.secondary:hover{background:#eee}
+.login-divider{display:flex;align-items:center;margin:24px 0;color:#aaa;font-size:14px}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e8d5da}
+.login-divider span{padding:0 16px}
+.login-features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:32px;padding-top:32px;border-top:1px solid #f0e5e8}
+.login-feature{text-align:center}
+.login-feature .icon{font-size:24px;margin-bottom:8px}
+.login-feature .text{font-size:12px;color:#9a7a82;line-height:1.4}
+.login-switch{margin-top:24px;text-align:center;font-size:14px;color:#666}
+.login-switch a{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:none}
+.login-switch a:hover{text-decoration:underline}
+.app-container{display:none;flex-direction:column;height:100vh}
+.app-container.active{display:flex}
 </style>
 </head>
 <body>
 
+<!-- 登录页面 -->
+<div id="login-page" class="login-container">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>🌊 Surf My Cycle</h1>
+      <p class="tagline">你的<span class="highlight">精力管理</span>伙伴</p>
+    </div>
+    
+    <div class="login-form">
+      <div class="login-input-group">
+        <label>账号</label>
+        <input type="text" id="login-username" placeholder="请输入账号" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+      
+      <div class="login-input-group">
+        <label>密码</label>
+        <input type="password" id="login-password" placeholder="请输入密码" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+      
+      <button class="login-btn" onclick="doLogin()">登录</button>
+      
+      <div class="login-divider">
+        <span>或者</span>
+      </div>
+      
+      <button class="login-btn secondary" onclick="showRegister()">注册新账号</button>
+    </div>
+    
+    <div class="login-features">
+      <div class="login-feature">
+        <div class="icon">⚡</div>
+        <div class="text">追踪能量波动</div>
+      </div>
+      <div class="login-feature">
+        <div class="icon">🤖</div>
+        <div class="text">AI 智能陪伴</div>
+      </div>
+      <div class="login-feature">
+        <div class="icon">📊</div>
+        <div class="text">发现个人模式</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 注册页面 -->
+<div id="register-page" class="login-container" style="display:none">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>📝 注册账号</h1>
+      <p class="tagline">开启你的<span class="highlight">精力管理</span>之旅</p>
+    </div>
+    
+    <div class="login-form">
+      <div class="login-input-group">
+        <label>账号</label>
+        <input type="text" id="reg-username" placeholder="3-20位字母/数字/下划线" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+      
+      <div class="login-input-group">
+        <label>密码</label>
+        <input type="password" id="reg-password" placeholder="至少6位" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+      
+      <div class="login-input-group">
+        <label>确认密码</label>
+        <input type="password" id="reg-password2" placeholder="再次输入密码" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+      
+      <button class="login-btn" onclick="doRegister()">注册</button>
+      
+      <div class="login-switch">
+        已有账号？<a onclick="showLogin()">立即登录</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 主应用容器 -->
+<div id="app-container" class="app-container">
 <header>
   <h1>Surf My Cycle</h1>
   <div class="tabs">
@@ -170,6 +282,7 @@ canvas{width:100%!important}
     <button class="tab" onclick="showPage('analysis',this)">分析</button>
   </div>
   <button class="tab" onclick="openSettings()" style="margin-left:8px">设置</button>
+  <button class="tab" onclick="doLogout()" style="margin-left:auto;background:var(--accent-light);color:var(--accent)">退出</button>
 </header>
 
 <div id="page-record" class="page active">
@@ -206,11 +319,11 @@ canvas{width:100%!important}
       <!-- AI聊天区域 -->
       <div class="ai-chat" id="ai-chat" style="margin-bottom:20px">
         <div class="ai-chat-header">
-          <h4>🍃 和叶子聊聊</h4>
+          <h4 id="ai-chat-title">🍃 和你的 AI 伙伴聊聊</h4>
         </div>
         <div class="ai-chat-messages" id="ai-messages"></div>
         <div class="ai-input-row">
-          <input type="text" id="ai-input" placeholder="告诉叶子你的感受..." onkeypress="if(event.key==='Enter')sendAI()">
+          <input type="text" id="ai-input" placeholder="告诉 AI 伙伴你的感受..." onkeypress="if(event.key==='Enter')sendAI()">
           <button onclick="sendAI()" id="ai-send-btn">发送</button>
         </div>
       </div>
@@ -367,9 +480,19 @@ flowchart LR
     <div class="form-row"><label>周期长度（天）</label><input type="number" id="cfg-cycle-len" value="28" min="21" max="45"></div>
     <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
     <h3>AI伴侣设置</h3>
+    <div class="form-row"><label>你的称呼（可选）</label><input type="text" id="cfg-display-name" maxlength="30" placeholder="例如：Mia / 小青 / 留空则显示“你”"></div>
+    <div class="form-row"><label>AI伙伴名字</label><input type="text" id="cfg-companion-name" maxlength="30" placeholder="例如：叶子、Luna、陪伴助手"></div>
+    <div class="form-row"><label>陪伴风格模板</label><select id="cfg-ai-style"></select></div>
+    <div class="form-row"><label>自定义 AI 提示词（可选）</label><textarea id="cfg-ai-custom-prompt" placeholder="例如：多鼓励我、少用表情、先共情再给建议。这里会附加到系统提示词里。"></textarea></div>
     <div class="form-row"><label>AI模型</label><select id="cfg-model"><option value="MiniMax-M2.7">MiniMax-M2.7（最强）</option><option value="MiniMax-M2.7-highspeed">MiniMax-M2.7 快速版</option><option value="MiniMax-M2.5">MiniMax-M2.5（平衡）</option><option value="MiniMax-M2">MiniMax-M2（轻量）</option></select></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <h3>数据管理</h3>
+    <button class="login-btn" onclick="migrateFromDefaultUser()" style="margin-bottom:8px;font-size:14px;">🔄 从旧账号恢复数据</button>
+    <button class="login-btn secondary" onclick="exportData()" style="font-size:14px;">📥 导出数据备份</button>
     <div class="modal-btns"><button class="btn-cancel" onclick="closeSettings()">取消</button><button class="btn-save" onclick="saveSettings()">保存</button></div>
   </div>
+</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -382,15 +505,85 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
  * 全局配置、常量定义、API密钥
  * ============================================================ */
 
-// Supabase REST API 直连（无需CDN库）
-const SUPABASE_URL = 'https://nslmawgeyaazawefajlq.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zbG1hd2dleWFhemF3ZWZhamxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjU0OTUsImV4cCI6MjA5MDMwMTQ5NX0.5ubSYgpX-bFxte7YYNGazjcbqNM2n67tTxrbGwcRjIc';
-const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+const API_BASE = '/api';
+const AUTH_SESSION_KEY = 'smc_auth_session_v2';
+const CURRENT_USERNAME_KEY = 'smc_current_username';
+
+function getStoredSession() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+
+function persistSession(session) {
+  if (!session || !session.access_token || !session.user) return;
+  const normalized = {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token || '',
+    expires_at: session.expires_at || 0,
+    user: session.user
+  };
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(normalized));
+  localStorage.setItem(LOGIN_KEY, normalized.user.username || normalized.user.id);
+  localStorage.setItem('smc_current_user', normalized.user.id);
+  localStorage.setItem(CURRENT_USERNAME_KEY, normalized.user.username || '');
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(LOGIN_KEY);
+  localStorage.removeItem('smc_current_user');
+  localStorage.removeItem(CURRENT_USERNAME_KEY);
+}
+
+async function apiRequest(path, options = {}) {
+  const session = getStoredSession();
+  const headers = { ...(options.headers || {}) };
+  if (!headers['Content-Type'] && options.body && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (session && session.access_token) {
+    headers.Authorization = 'Bearer ' + session.access_token;
+  }
+  const response = await fetch(API_BASE + path, { ...options, headers });
+  if (response.status === 401 && session && session.refresh_token && !options._retried) {
+    const refreshed = await refreshAuthSession();
+    if (refreshed) {
+      return apiRequest(path, { ...options, _retried: true });
+    }
+  }
+  return response;
+}
+
+async function refreshAuthSession() {
+  const session = getStoredSession();
+  if (!session || !session.refresh_token) return false;
+  try {
+    const response = await fetch(API_BASE + '/auth-refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: session.refresh_token })
+    });
+    if (!response.ok) {
+      clearStoredSession();
+      return false;
+    }
+    const data = await response.json();
+    persistSession(data.session);
+    return true;
+  } catch (e) {
+    clearStoredSession();
+    return false;
+  }
+}
+
 async function sbGet(table, params, retries = 2) {
-  const q = Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  const q = new URLSearchParams({ table, ...params }).toString();
   for (let i = 0; i <= retries; i++) {
     try {
-      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + q, { headers: SB_HEADERS });
+      const r = await apiRequest('/data?' + q);
       if (r.ok) return r.json();
       if (i === retries) {
         console.error('sbGet failed after', retries, 'retries:', r.status);
@@ -409,9 +602,9 @@ async function sbGet(table, params, retries = 2) {
 async function sbUpsert(table, body, retries = 2) {
   for (let i = 0; i <= retries; i++) {
     try {
-      const r = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
-        method: 'POST', headers: { ...SB_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=representation' },
-        body: JSON.stringify(body)
+      const r = await apiRequest('/data', {
+        method: 'POST',
+        body: JSON.stringify({ table, record: body })
       });
       if (r.ok) return true;
       const errorText = await r.text();
@@ -430,11 +623,679 @@ async function sbUpsert(table, body, retries = 2) {
   return false;
 }
 async function sbDelete(table, params) {
-  const q = Object.entries(params).map(([k,v]) => k + '=eq.' + encodeURIComponent(v)).join('&');
-  await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + q, { method: 'DELETE', headers: SB_HEADERS });
+  await apiRequest('/data', {
+    method: 'DELETE',
+    body: JSON.stringify({ table, filters: params })
+  });
 }
 
-let currentUserId = 'default_user'; // 可以用localStorage存储用户ID
+// 账号密码登录系统
+const LOGIN_KEY = 'smc_logged_in_user';
+const USERS_KEY = 'smc_registered_users';
+const DEFAULT_AI_STYLE_TEMPLATE = 'supportive_friend';
+const AI_STYLE_TEMPLATES = {
+  supportive_friend: {
+    label: '温暖陪伴',
+    summary: '温柔、共情、先陪伴再建议',
+    prompt: `你是一位温暖、可靠、边界清晰的陪伴型 AI 伙伴。你的目标是帮助用户记录状态、理解周期波动，并给出温和、实用、不过度说教的建议。
+
+沟通原则：
+- 先理解感受，再给建议
+- 语气自然、真诚、轻松，不居高临下
+- 不假设用户是谁、来自哪里、喜欢什么
+- 不把用户和任何历史用户混淆
+- 不虚构长期记忆；只引用当前上下文明确给出的信息
+- 当问题涉及健康风险时，提醒用户考虑寻求专业帮助
+
+回复风格：
+- 简洁、具体、有人味
+- 优先给可执行的小建议
+- 如果用户只是想被接住，就少给方案，多陪伴`
+  },
+  coach: {
+    label: '清晰教练',
+    summary: '结构化、务实、强调行动',
+    prompt: `你是一位清晰、务实的教练型 AI 助手。你的目标是帮助用户识别状态、拆解问题、形成可以马上执行的小步骤。
+
+沟通原则：
+- 先判断用户是在倾诉、求建议还是求解释
+- 建议尽量结构化，控制在 1-3 个关键动作
+- 语气坚定但不过度强硬
+- 不假设用户身份、职业、偏好或关系背景
+- 不泄露或引用其他用户的信息
+- 不输出未经证据支持的医学断言`
+  },
+  science_guide: {
+    label: '理性科普',
+    summary: '更理性、偏解释和证据',
+    prompt: `你是一位理性、可信、善于解释的健康与效率向 AI 助手。你的目标是结合用户的周期和记录，提供清晰解释与谨慎建议。
+
+沟通原则：
+- 优先区分“事实解释”和“建议”
+- 当有搜索结果时，基于结果做通俗转述
+- 没有证据时明确说明不确定
+- 不把个体经验包装成普适规律
+- 不假设用户有特定书单偏好、人格设定或固定关系称呼`
+  },
+  lively_buddy: {
+    label: '轻松活泼',
+    summary: '更有亲近感，但不过分冒犯',
+    prompt: `你是一位轻松、活泼、善于打破僵局的 AI 伙伴。你的目标是让用户更愿意持续记录和表达。
+
+沟通原则：
+- 可以适度俏皮，但避免攻击性、讽刺或冒犯
+- 不把自己的风格强加给用户，留意对方是否接受轻松语气
+- 多用贴近日常的表达，少堆砌术语
+- 不默认用户喜欢某种人格或话术风格`
+  }
+};
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizePromptText(text, maxLen = 1200) {
+  return String(text || '')
+    .replace(/[<>]/g, '')
+    .replace(/\s+\n/g, '\n')
+    .trim()
+    .slice(0, maxLen);
+}
+
+function getUserDisplayName(cfg = {}) {
+  return sanitizePromptText(cfg.displayName || '', 30) || '你';
+}
+
+function getCompanionName(cfg = {}) {
+  return sanitizePromptText(cfg.companionName || '', 30) || 'AI伙伴';
+}
+
+function getAiStyleTemplate(cfg = {}) {
+  const key = cfg.aiStyleTemplate || DEFAULT_AI_STYLE_TEMPLATE;
+  return AI_STYLE_TEMPLATES[key] ? key : DEFAULT_AI_STYLE_TEMPLATE;
+}
+
+function renderAiStyleOptions(selectedKey = DEFAULT_AI_STYLE_TEMPLATE) {
+  const select = document.getElementById('cfg-ai-style');
+  if (!select) return;
+  select.innerHTML = Object.entries(AI_STYLE_TEMPLATES).map(([key, template]) =>
+    `<option value="${key}" ${key === selectedKey ? 'selected' : ''}>${template.label} · ${template.summary}</option>`
+  ).join('');
+}
+
+function renderAICompanionUI(cfg = {}) {
+  const companionName = getCompanionName(cfg);
+  const titleEl = document.getElementById('ai-chat-title');
+  const inputEl = document.getElementById('ai-input');
+  if (titleEl) titleEl.innerHTML = `🍃 和${escapeHtml(companionName)}聊聊`;
+  if (inputEl) inputEl.placeholder = `告诉${companionName}你的感受...`;
+}
+
+function buildAISystemPrompt({
+  cfg,
+  currentTimeStr,
+  timeOfDay,
+  phase,
+  cycleDay,
+  timeSlotName,
+  longTermMemory,
+  recentContextText,
+  benchmark,
+  dietIntervention,
+  searchResults
+}) {
+  const displayName = getUserDisplayName(cfg);
+  const companionName = getCompanionName(cfg);
+  const templateKey = getAiStyleTemplate(cfg);
+  const template = AI_STYLE_TEMPLATES[templateKey];
+  const customPrompt = sanitizePromptText(cfg.aiCustomPrompt || '', 2000);
+
+  return `你是“${companionName}”，一位面向真实产品用户的 AI 周期记录与陪伴助手。
+
+【产品边界】
+- 这是一个多用户产品，每位用户的数据必须严格隔离
+- 你只能基于当前这位用户的当次消息、当前账号配置、当前页面上下文和当前账号下的历史摘要来回应
+- 不要提及、暗示或杜撰任何其他用户的信息
+- 不要假设用户是某个固定的人，也不要把用户称作任何预设名字
+- 如果上下文没有给出，不要自称认识用户很久，不要假设共同经历
+
+【当前风格模板】
+模板名称：${template.label}
+模板说明：${template.summary}
+模板提示词：
+${template.prompt}
+
+${customPrompt ? `【用户自定义偏好】\n${customPrompt}\n` : ''}
+【当前用户信息】
+- 用户称呼：${displayName}
+- 实时时间：${currentTimeStr}（${timeOfDay}）
+- 月经周期：${phase ? phase.name : '未知'}阶段（周期第${cycleDay || '?'}天）
+- 当前时段：${timeSlotName}
+${longTermMemory && longTermMemory !== '暂无长期记忆' ? '- 当前账号长期记忆摘要：' + longTermMemory : ''}
+
+${recentContextText}
+
+【本期预期】
+${benchmark ? `- 合理评分范围：精力${benchmark.energy.min}-${benchmark.energy.max}分，心情${benchmark.mood.min}-${benchmark.mood.max}分` : ''}
+${dietIntervention ? `- 饮食建议：${dietIntervention.message}` : ''}
+
+${searchResults && searchResults.success ? `【搜索到的参考信息】
+${searchResults.answer ? `- 研究结论：${searchResults.answer}` : ''}
+${searchResults.results && searchResults.results.length > 0 ? searchResults.results.map((r, i) => `- 参考${i + 1}：${r.title}｜${r.content.substring(0, 150)}...｜${r.url}`).join('\n') : ''}
+` : ''}
+【回复要求】
+1. 以产品化、通用化的语气服务用户，不绑定特定人设或固定关系。
+2. 优先回应用户当下的情绪和问题，再给建议。
+3. 建议要小而具体，避免说教和过度下判断。
+4. 如果用户只是想记录感受，可以帮她整理、命名和澄清，而不是强行分析。
+5. 涉及健康风险、持续疼痛、异常出血或严重情绪问题时，提醒考虑及时寻求专业帮助。
+${searchResults && searchResults.success ? '6. 如果引用搜索信息，请明确这是参考信息并用通俗语言转述。' : '6. 当用户追问原因、证据或研究时，可以结合搜索结果做解释。'}
+
+【评分格式】
+请在回复结束时，用以下格式给出情绪评分（如果无法判断则不输出）：
+[评分]心情:7,能量:8,效率:6,社交:5,食欲:7`;
+}
+
+let currentUsername = localStorage.getItem(CURRENT_USERNAME_KEY) || '';
+
+// 检查登录状态
+async function checkLoginStatus() {
+  const session = getStoredSession();
+  if (!session) {
+    showLoginPage();
+    return false;
+  }
+  if (session.expires_at && Date.now() / 1000 > session.expires_at - 60) {
+    const refreshed = await refreshAuthSession();
+    if (!refreshed) {
+      showLoginPage();
+      return false;
+    }
+  }
+  const latest = getStoredSession();
+  if (!latest || !latest.user) {
+    showLoginPage();
+    return false;
+  }
+  currentUserId = latest.user.id;
+  currentUsername = latest.user.username || '';
+  hideLoginPage();
+  return true;
+}
+
+// 显示登录页
+function showLoginPage() {
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('register-page').style.display = 'none';
+  document.getElementById('app-container').classList.remove('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// 隐藏登录页
+function hideLoginPage() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('register-page').style.display = 'none';
+  document.getElementById('app-container').classList.add('active');
+  document.body.style.overflow = 'auto';
+}
+
+// 显示注册页
+function showRegister() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('register-page').style.display = 'flex';
+}
+
+// 返回登录页
+function showLogin() {
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('register-page').style.display = 'none';
+}
+
+function getDataLegacyByUser(userId) {
+  try {
+    return JSON.parse(localStorage.getItem(userId + '_smc_data') || '[]');
+  } catch (e) {
+    console.warn('读取本地记录失败:', userId, e);
+    return [];
+  }
+}
+
+function getConfigLegacyByUser(userId) {
+  try {
+    return JSON.parse(localStorage.getItem(userId + '_smc_config') || '{}');
+  } catch (e) {
+    console.warn('读取本地配置失败:', userId, e);
+    return {};
+  }
+}
+
+function getCustomChipsLegacyByUser(userId) {
+  try {
+    return JSON.parse(localStorage.getItem(userId + '_smc_custom_chips') || '[]');
+  } catch (e) {
+    console.warn('读取本地标签失败:', userId, e);
+    return [];
+  }
+}
+
+function setDataLegacyByUser(userId, data) {
+  localStorage.setItem(userId + '_smc_data', JSON.stringify(data || []));
+}
+
+function setConfigLegacyByUser(userId, config) {
+  localStorage.setItem(userId + '_smc_config', JSON.stringify(config || {}));
+}
+
+function setCustomChipsLegacyByUser(userId, chips) {
+  localStorage.setItem(userId + '_smc_custom_chips', JSON.stringify(chips || []));
+}
+
+async function getRecordsForUser(userId) {
+  const localRows = getDataLegacyByUser(userId);
+  const cloudRows = await sbGet('records', { 'user_id': 'eq.' + userId, 'select': '*' });
+  const merged = new Map();
+  for (const row of localRows) {
+    if (row && row.date) merged.set(row.date, { ...row, user_id: userId });
+  }
+  for (const row of cloudRows || []) {
+    if (row && row.date) merged.set(row.date, { ...row, user_id: userId });
+  }
+  return Array.from(merged.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+async function getConfigForUser(userId) {
+  const localConfig = getConfigLegacyByUser(userId);
+  const rows = await sbGet('config', { 'user_id': 'eq.' + userId, 'select': '*' });
+  const cloudConfig = (rows && rows[0] && rows[0].value) ? rows[0].value : {};
+  return { ...localConfig, ...cloudConfig };
+}
+
+async function setConfigForUser(userId, cfg) {
+  const existing = await getConfigForUser(userId);
+  const merged = { ...existing, ...cfg, updated_at: new Date().toISOString() };
+  setConfigLegacyByUser(userId, merged);
+  const ok = await sbUpsert('config', { user_id: userId, value: merged });
+  return ok ? 'supabase' : 'local';
+}
+
+async function migrateUserData(sourceUserId, targetUserId) {
+  const records = await getRecordsForUser(sourceUserId);
+  const config = await getConfigForUser(sourceUserId);
+  const customChips = getCustomChipsLegacyByUser(sourceUserId);
+
+  if (records.length === 0 && Object.keys(config).length === 0 && customChips.length === 0) {
+    return { recordsMigrated: 0, configMigrated: false, chipsMigrated: false, storage: 'none' };
+  }
+
+  setDataLegacyByUser(targetUserId, records.map(record => ({ ...record, user_id: targetUserId })));
+  setConfigLegacyByUser(targetUserId, config);
+  setCustomChipsLegacyByUser(targetUserId, customChips);
+
+  let storage = 'supabase';
+  for (const record of records) {
+    const result = await saveRecordDB({ ...record, user_id: targetUserId }, targetUserId);
+    if (result !== 'supabase') storage = 'local';
+  }
+  if (Object.keys(config).length > 0) {
+    const configResult = await setConfigForUser(targetUserId, config);
+    if (configResult !== 'supabase') storage = 'local';
+  }
+
+  return {
+    recordsMigrated: records.length,
+    configMigrated: Object.keys(config).length > 0,
+    chipsMigrated: customChips.length > 0,
+    storage
+  };
+}
+
+async function repairAccountFromDefaultUserIfNeeded(userId) {
+  if (!userId || userId === 'default_user') return null;
+
+  const repairKey = 'smc_default_user_repaired_' + userId;
+  if (localStorage.getItem(repairKey) === '1') return null;
+
+  const existingRecords = await getRecordsForUser(userId);
+  const existingConfig = await getConfigForUser(userId);
+  const existingChips = getCustomChipsLegacyByUser(userId);
+  const existingConversations = await sbGet('conversations', { 'user_id': 'eq.' + userId, 'select': '*', 'limit': 1 });
+  const defaultConversations = await sbGet('conversations', { 'user_id': 'eq.default_user', 'select': '*', 'limit': 1 });
+  const needsConversationRepair =
+    Array.isArray(defaultConversations) &&
+    defaultConversations.length > 0 &&
+    (!Array.isArray(existingConversations) || existingConversations.length === 0);
+
+  if ((existingRecords.length > 0 || Object.keys(existingConfig).length > 0 || existingChips.length > 0) && !needsConversationRepair) {
+    localStorage.setItem(repairKey, '1');
+    return null;
+  }
+
+  let result = null;
+  try {
+    const migrateResponse = await apiRequest('/migrate-default-user', { method: 'POST' });
+    const migratePayload = await migrateResponse.json().catch(() => ({}));
+    result = {
+      recordsMigrated: migratePayload.recordsMigrated || 0,
+      conversationsMigrated: migratePayload.conversationsMigrated || 0,
+      configMigrated: Boolean(migratePayload.configMigrated),
+      chipsMigrated: false,
+      storage: migratePayload.storage || 'supabase'
+    };
+  } catch (e) {
+    console.warn('云端 default_user 修复失败:', e);
+  }
+
+  const localRecords = getDataLegacyByUser('default_user');
+  const localConfig = getConfigLegacyByUser('default_user');
+  const localChips = getCustomChipsLegacyByUser('default_user');
+  if (localRecords.length > 0 || Object.keys(localConfig).length > 0 || localChips.length > 0) {
+    setDataLegacyByUser(userId, localRecords.map(record => ({ ...record, user_id: userId })));
+    setConfigLegacyByUser(userId, localConfig);
+    setCustomChipsLegacyByUser(userId, localChips);
+    for (const record of localRecords) {
+      await saveRecordDB({ ...record, user_id: userId }, userId);
+    }
+    if (Object.keys(localConfig).length > 0) {
+      await setConfigForUser(userId, localConfig);
+    }
+    result = {
+      recordsMigrated: Math.max(result?.recordsMigrated || 0, localRecords.length),
+      conversationsMigrated: result?.conversationsMigrated || 0,
+      configMigrated: (result?.configMigrated || false) || Object.keys(localConfig).length > 0,
+      chipsMigrated: localChips.length > 0,
+      storage: result?.storage || 'local'
+    };
+  }
+
+  if (result && (result.recordsMigrated > 0 || result.conversationsMigrated > 0 || result.configMigrated || result.chipsMigrated)) {
+    localStorage.setItem(repairKey, '1');
+    console.log('已自动补迁移 default_user 数据到', userId, result);
+    return result;
+  }
+  return null;
+}
+
+// 登录
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  
+  if (!username || !password) {
+    alert('请输入账号和密码');
+    return;
+  }
+  
+  const response = await fetch(API_BASE + '/auth-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    alert(payload.error || '登录失败，请检查账号或密码');
+    return;
+  }
+
+  persistSession(payload.session);
+  currentUserId = payload.session.user.id;
+  currentUsername = payload.session.user.username || username;
+  const repairResult = await repairAccountFromDefaultUserIfNeeded(currentUserId);
+  
+  // 清除输入
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  
+  hideLoginPage();
+  updateUserSelector();
+  renderAICompanionUI(await getConfig());
+  await syncSelectedDateToAvailableRecord();
+  await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  await loadRecordPanel(rState.selected);
+  loadCustomChips();
+  renderCustomChips();
+  
+  const repairMsg = repairResult && repairResult.recordsMigrated > 0
+    ? ` 已自动恢复 ${repairResult.recordsMigrated} 条历史记录。`
+    : '';
+  alert(`欢迎回来，${currentUsername || username}！${repairMsg}`);
+}
+
+// 注册
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const password2 = document.getElementById('reg-password2').value;
+  
+  if (!username || !password || !password2) {
+    alert('请填写所有信息');
+    return;
+  }
+  
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+    alert('账号只能是3-20位字母、数字或下划线');
+    return;
+  }
+  
+  // 验证密码长度
+  if (password.length < 6) {
+    alert('密码至少6位');
+    return;
+  }
+  
+  // 验证两次密码是否一致
+  if (password !== password2) {
+    alert('两次输入的密码不一致');
+    return;
+  }
+  
+  const response = await fetch(API_BASE + '/auth-signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    alert(payload.error || '注册失败，请稍后再试');
+    return;
+  }
+
+  persistSession(payload.session);
+  currentUserId = payload.session.user.id;
+  currentUsername = payload.session.user.username || username;
+  const oldUserId = 'default_user';
+  const oldData = getDataLegacyByUser(oldUserId);
+  const oldConfig = getConfigLegacyByUser(oldUserId);
+  const oldCustomChips = getCustomChipsLegacyByUser(oldUserId);
+  console.log('找到旧数据:', oldData.length, '条本地记录');
+
+  try {
+    const migrateResponse = await apiRequest('/migrate-default-user', { method: 'POST' });
+    const migratePayload = await migrateResponse.json().catch(() => ({}));
+    console.log('默认账号云端迁移结果:', migratePayload);
+  } catch (e) {
+    console.warn('默认账号云端迁移失败:', e);
+  }
+
+  if (oldData.length > 0 || Object.keys(oldConfig).length > 0 || oldCustomChips.length > 0) {
+    try {
+      setDataLegacyByUser(currentUserId, oldData.map(record => ({ ...record, user_id: currentUserId })));
+      setConfigLegacyByUser(currentUserId, oldConfig);
+      setCustomChipsLegacyByUser(currentUserId, oldCustomChips);
+      for (const record of oldData) {
+        await saveRecordDB({ ...record, user_id: currentUserId }, currentUserId);
+      }
+      if (Object.keys(oldConfig).length > 0) {
+        await setConfigForUser(currentUserId, oldConfig);
+      }
+    } catch (e) {
+      console.error('本地数据迁移失败:', e);
+    }
+  }
+  
+  // 清除输入
+  document.getElementById('reg-username').value = '';
+  document.getElementById('reg-password').value = '';
+  document.getElementById('reg-password2').value = '';
+  
+  hideLoginPage();
+  updateUserSelector();
+  renderAICompanionUI(await getConfig());
+  await syncSelectedDateToAvailableRecord();
+  await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  await loadRecordPanel(rState.selected);
+  loadCustomChips();
+  renderCustomChips();
+  
+  const migrateMsg = oldData.length > 0 ? `，已迁移 ${oldData.length} 条记录` : '';
+  alert(`注册成功！欢迎，${currentUsername || username}！${migrateMsg}`);
+}
+
+// 登出
+function doLogout() {
+  if (!confirm('确定要退出登录吗？')) {
+    return;
+  }
+  clearStoredSession();
+  currentUserId = 'default_user';
+  currentUsername = '';
+  document.getElementById('app-container').classList.remove('active');
+  showLoginPage();
+}
+
+// 从旧账号恢复数据
+async function migrateFromDefaultUser() {
+  const oldUserId = 'default_user';
+  
+  try {
+    const oldData = getDataLegacyByUser(oldUserId);
+    const oldConfig = getConfigLegacyByUser(oldUserId);
+    const oldCustomChips = getCustomChipsLegacyByUser(oldUserId);
+    
+    if (oldData.length === 0 && Object.keys(oldConfig).length === 0 && oldCustomChips.length === 0) {
+      const migrateResponse = await apiRequest('/migrate-default-user', { method: 'POST' });
+      const migratePayload = await migrateResponse.json().catch(() => ({}));
+      if (!migrateResponse.ok || !(migratePayload.recordsMigrated || migratePayload.configMigrated)) {
+        alert('没有找到可恢复的旧账号数据');
+        return;
+      }
+      alert(`✅ 成功恢复 ${migratePayload.recordsMigrated || 0} 条云端记录！`);
+      configCache = null;
+      renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+      loadRecordPanel(rState.selected);
+      closeSettings();
+      return;
+    }
+    
+    if (!confirm(`找到 ${oldData.length} 条记录，确定要恢复到当前账号吗？`)) {
+      return;
+    }
+    
+    await apiRequest('/migrate-default-user', { method: 'POST' });
+    await migrateUserData(oldUserId, currentUserId);
+    
+    // 刷新页面显示
+    configCache = null;
+    renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+    loadRecordPanel(rState.selected);
+    loadCustomChips();
+    renderCustomChips();
+    
+    alert(`✅ 成功恢复 ${oldData.length} 条记录！`);
+    closeSettings();
+    
+  } catch(e) {
+    console.error('恢复数据失败:', e);
+    alert('恢复数据失败: ' + e.message);
+  }
+}
+
+let currentUserId = (getStoredSession() && getStoredSession().user && getStoredSession().user.id) || localStorage.getItem('smc_current_user') || 'default_user';
+
+// 用户管理函数
+function getUserList() {
+  const users = localStorage.getItem('smc_user_list');
+  return users ? JSON.parse(users) : ['default_user'];
+}
+
+function saveUserList(users) {
+  localStorage.setItem('smc_user_list', JSON.stringify(users));
+}
+
+function switchUser(userId) {
+  if (!userId) return;
+  currentUserId = userId;
+  localStorage.setItem('smc_current_user', userId);
+  // 清除缓存，强制重新加载数据
+  configCache = null;
+  contextCache = { date: null, contextText: '', lastUpdated: null, rawContext: null };
+  aiConversation = [];
+  getConfig().then(cfg => renderAICompanionUI(cfg));
+  // 重新渲染页面
+  renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  loadRecordPanel(rState.selected);
+  loadCustomChips();
+  renderCustomChips();
+  alert(`已切换到用户: ${userId}`);
+}
+
+function addNewUser() {
+  const name = prompt('请输入新用户昵称（仅限英文和数字）:');
+  if (!name) return;
+  // 验证用户名
+  if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+    alert('用户名只能包含英文、数字和下划线');
+    return;
+  }
+  // 检查是否已存在
+  const users = getUserList();
+  if (users.includes(name)) {
+    alert('该用户已存在');
+    return;
+  }
+  // 添加新用户
+  users.push(name);
+  saveUserList(users);
+  updateUserSelector();
+  // 切换到新用户
+  switchUser(name);
+}
+
+function updateUserSelector() {
+  const selector = document.getElementById('user-selector');
+  if (!selector) return;
+  const users = getUserList();
+  selector.innerHTML = users.map(u => 
+    `<option value="${u}" ${u === currentUserId ? 'selected' : ''}>${u}</option>`
+  ).join('');
+}
+
+function initApp() {
+  // 初始化应用
+  return (async () => {
+    const cfg = await getConfig();
+    renderAICompanionUI(cfg);
+    await syncSelectedDateToAvailableRecord();
+    await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+    await loadRecordPanel(rState.selected);
+    loadCustomChips();
+    renderCustomChips();
+  })();
+}
+
+// 页面加载时检查登录状态
+window.addEventListener('load', async () => {
+  if (!(await checkLoginStatus())) {
+    return; // 未登录，显示登录页面
+  }
+  await repairAccountFromDefaultUserIfNeeded(currentUserId);
+  updateUserSelector();
+  await initApp();
+});
 
 const TIME_SLOTS = {
   morning: { name: '早上', color: '#3498db' },
@@ -477,35 +1338,48 @@ async function setData(arr) {
 }
 async function getConfig() {
   const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
-  return (rows && rows[0]) ? (rows[0].value || {}) : {};
+  if (rows && rows[0]) return rows[0].value || {};
+  return getConfigLegacy();
 }
 async function setConfig(cfg) {
-  // 先读取现有配置，合并后再保存
-  const existing = await getConfig();
-  const merged = { ...existing, ...cfg, updated_at: new Date().toISOString() };
-  await sbUpsert('config', { user_id: currentUserId, value: merged });
+  return setConfigForUser(currentUserId, cfg);
 }
 async function getRecord(dateStr) {
   const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + dateStr, 'select': '*' });
   return (rows && rows[0]) ? rows[0] : null;
 }
-async function saveRecordDB(record) {
-  // 先保存到本地备份
-  localStorage.setItem('smc_record_' + record.date, JSON.stringify(record));
-  
+
+async function getLatestRecordDate() {
+  const rows = await getData();
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return rows[rows.length - 1]?.date || null;
+}
+
+async function syncSelectedDateToAvailableRecord() {
+  const selectedRecord = await getRecord(rState.selected);
+  if (selectedRecord) return rState.selected;
+  const latestDate = await getLatestRecordDate();
+  if (latestDate) {
+    rState.selected = latestDate;
+  }
+  return rState.selected;
+}
+async function saveRecordDB(record, userId = (record && record.user_id) || currentUserId) {
+  const normalizedRecord = { ...record, user_id: userId };
+  localStorage.setItem(userId + '_smc_record_' + normalizedRecord.date, JSON.stringify(normalizedRecord));
+  const allData = getDataLegacyByUser(userId);
+  const idx = allData.findIndex(d => d.date === normalizedRecord.date);
+  if (idx >= 0) {
+    allData[idx] = normalizedRecord;
+  } else {
+    allData.push(normalizedRecord);
+  }
+  setDataLegacyByUser(userId, allData);
+
   // 尝试Supabase
-  const result = await sbUpsert('records', { ...record, user_id: currentUserId });
+  const result = await sbUpsert('records', normalizedRecord);
   if (!result) {
     console.warn('Supabase保存失败，降级到localStorage');
-    // 降级到localStorage
-    const allData = getDataLegacy();
-    const idx = allData.findIndex(d => d.date === record.date);
-    if (idx >= 0) {
-      allData[idx] = record;
-    } else {
-      allData.push(record);
-    }
-    localStorage.setItem('smc_data', JSON.stringify(allData));
     return 'local'; // 返回local表示使用了本地存储
   }
   return 'supabase';
@@ -567,8 +1441,16 @@ async function importData(jsonStr) {
 }
 
 // 兼容旧版localStorage（迁移用）
-function getDataLegacy() { try { return JSON.parse(localStorage.getItem('smc_data') || '[]'); } catch(e) { return []; } }
-function getConfigLegacy() { try { return JSON.parse(localStorage.getItem('smc_config') || '{}'); } catch(e) { return {}; } }
+function getDataLegacy() { 
+  try { 
+    return JSON.parse(localStorage.getItem(currentUserId + '_smc_data') || '[]'); 
+  } catch(e) { return []; } 
+}
+function getConfigLegacy() { 
+  try { 
+    return JSON.parse(localStorage.getItem(currentUserId + '_smc_config') || '{}'); 
+  } catch(e) { return {}; } 
+}
 function getRecordLegacy(dateStr) { return getDataLegacy().find(d => d.date === dateStr) || null; }
 
 // 从旧IndexedDB读取数据（迁移用）
@@ -748,10 +1630,57 @@ function nextMonth(which) {
 
 let currentRecDate = null;
 
+function slotHasMeaningfulData(slot = {}) {
+  if (!slot || typeof slot !== 'object') return false;
+  if (slot.note && String(slot.note).trim()) return true;
+  if (Array.isArray(slot.chips) && slot.chips.length > 0) return true;
+  return ['mood', 'energy', 'focus', 'social', 'appetite'].some(key => {
+    const value = Number(slot[key]);
+    return Number.isFinite(value) && value !== 5;
+  });
+}
+
+function getSlotContentScore(slot = {}) {
+  if (!slot || typeof slot !== 'object') return 0;
+  let score = 0;
+  if (slot.note && String(slot.note).trim()) score += 100;
+  if (Array.isArray(slot.chips) && slot.chips.length > 0) score += 20 + slot.chips.length;
+  ['mood', 'energy', 'focus', 'social', 'appetite'].forEach(key => {
+    const value = Number(slot[key]);
+    if (Number.isFinite(value) && value !== 5) score += 5;
+  });
+  return score;
+}
+
+function pickPreferredTimeSlot(record) {
+  if (!record || !record.slots) return currentTimeSlot;
+  const slots = ['morning', 'afternoon', 'evening'];
+  const currentScore = getSlotContentScore(record.slots[currentTimeSlot]);
+  let bestSlot = currentTimeSlot;
+  let bestScore = currentScore;
+
+  slots.forEach(slotName => {
+    const score = getSlotContentScore(record.slots[slotName]);
+    if (score > bestScore) {
+      bestSlot = slotName;
+      bestScore = score;
+    }
+  });
+
+  if (bestScore > 0) return bestSlot;
+  if (slotHasMeaningfulData(record.slots[currentTimeSlot])) return currentTimeSlot;
+  return slots.find(slotName => slotHasMeaningfulData(record.slots[slotName])) || currentTimeSlot;
+}
+
+function syncTimeSlotTabs() {
+  document.querySelectorAll('.time-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.getAttribute('data-time') === currentTimeSlot);
+  });
+}
+
 function selectTimeSlot(el) {
   currentTimeSlot = el.getAttribute('data-time');
-  document.querySelectorAll('.time-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  syncTimeSlotTabs();
   loadRecordPanel(currentRecDate);
 }
 
@@ -774,6 +1703,8 @@ async function loadRecordPanel(dateStr) {
   document.getElementById('rec-form').style.display = 'flex';
 
   const rec = await getRecord(dateStr);
+  currentTimeSlot = pickPreferredTimeSlot(rec);
+  syncTimeSlotTabs();
   const slot = rec && rec.slots ? (rec.slots[currentTimeSlot] || {}) : {};
   document.getElementById('rec-note').value = slot.note || '';
   ['mood','energy','focus','social','appetite'].forEach(k => {
@@ -879,12 +1810,12 @@ let customChips = [];
 
 function loadCustomChips() {
   try {
-    customChips = JSON.parse(localStorage.getItem('smc_custom_chips') || '[]');
+    customChips = JSON.parse(localStorage.getItem(currentUserId + '_smc_custom_chips') || '[]');
   } catch(e) { customChips = []; }
 }
 
 function saveCustomChips() {
-  localStorage.setItem('smc_custom_chips', JSON.stringify(customChips));
+  localStorage.setItem(currentUserId + '_smc_custom_chips', JSON.stringify(customChips));
 }
 
 function renderCustomChips() {
@@ -1466,41 +2397,22 @@ function invalidateContextCache() {
   console.log('♻️ 上下文缓存已清除');
 }
 
-const MINIMAX_API_KEY = 'sk-cp-s0OLD9AiD0PS2QxKRvNS9QZ7h1-i_8MdMGYETPdRtFE_dlOGkL5fDyMAG0TulF3601fxe12vl9Opqu6RNT3vcgBTzBibGWlzI-Vrnsh5_jpN_NgOL3nOfrg';
-
 /* ============================================================
  * 🧩 模块5.5: 搜索技能 (SEARCH_SKILL)
  * 文献检索、科学数据查询
  * ============================================================ */
 
-const TAVILY_API_KEY = 'tvly-dev-YOUR_API_KEY'; // 需要替换为实际的Tavily API key
-
 async function searchLiterature(query, options = {}) {
   const { maxResults = 5, searchDepth = 'basic', includeDomains = [] } = options;
   
   try {
-    // 构建搜索查询 - 针对月经周期相关话题优化
-    const enhancedQuery = enhanceSearchQuery(query);
-    
-    const response = await fetch('https://api.tavily.com/search', {
+    const response = await apiRequest('/search', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + TAVILY_API_KEY
-      },
       body: JSON.stringify({
-        query: enhancedQuery,
+        query,
         search_depth: searchDepth,
         max_results: maxResults,
-        include_answer: true,
-        include_domains: includeDomains.length > 0 ? includeDomains : [
-          'ncbi.nlm.nih.gov',
-          'pubmed.ncbi.nlm.nih.gov',
-          'sciencedirect.com',
-          'nature.com',
-          'frontiersin.org',
-          'who.int'
-        ]
+        include_domains: includeDomains
       })
     });
     
@@ -1520,7 +2432,7 @@ async function searchLiterature(query, options = {}) {
         content: r.content,
         score: r.score
       })),
-      query: enhancedQuery
+      query: data.query || query
     };
     
   } catch (error) {
@@ -1625,8 +2537,6 @@ async function sendAI() {
   if (!msg) return;
   
   const cfg = await getConfig();
-  const apiKey = MINIMAX_API_KEY;
-  
   const btn = document.getElementById('ai-send-btn');
   btn.disabled = true;
   btn.textContent = '...';
@@ -1640,7 +2550,7 @@ async function sendAI() {
   let searchResults = null;
   if (shouldSearch(msg, aiConversation)) {
     console.log('🔍 触发搜索:', msg);
-    messagesEl.innerHTML += '<div class="ai-msg ai" style="opacity:0.7;font-size:12px;">🔍 叶子正在搜索相关文献...</div>';
+    messagesEl.innerHTML += `<div class="ai-msg ai" style="opacity:0.7;font-size:12px;">🔍 ${escapeHtml(getCompanionName(cfg))}正在搜索相关资料...</div>`;
     messagesEl.scrollTop = messagesEl.scrollHeight;
     
     searchResults = await searchLiterature(msg, { maxResults: 3 });
@@ -1691,122 +2601,20 @@ async function sendAI() {
   const dietIntervention = getDietIntervention(cycleDay);
   const cycleInsight = getCycleInsight(cycleDay, phase?.name);
   
-  const systemPrompt = `你是"叶子"（Leaf），一个26岁的资深毒舌闺蜜+人生教练。你深谙《遥远的救世主》《天幕红尘》《福格行为模型》《微习惯》等书籍精髓。
-
-## 【你的性格 - 毒舌有趣版】
-- 毒舌但温暖：会用"你又在找借口了😏"戳穿用户，但紧接着给拥抱
-- 有趣的灵魂：用表情包语气、网络梗、偶尔吐槽，不说教
-- 主动找话题：不会等用户问，会说"诶我今天发现个有意思的事..."
-- 懂用户的痛点：深谙强势文化、见路不走、微习惯等核心理念
-
-## 【说话风格示例】
-❌ 温柔版："看到你昨天提到工作很累，今天休息一下吧"
-✅ 毒舌版："诶姐妹，你昨天说工作累，今天还在刷手机？😏 不过说真的，你最近黄体期确实容易疲劳，要不今天先微习惯一下？就1个俯卧撑，小到不可能失败那种"
-
-❌ 标准版："黄体期会想吃甜食，这是正常的"
-✅ 叶子版："又在想奶茶了？🥤 孕激素搞的鬼，不是你的错！不过记得《福格行为模型》说的吗？能力不够的时候降低难度，想吃甜的就先吃口苹果，骗骗身体"
-
-## 【主动找话题机制】
-- 用户3分钟没说话，主动问："诶话说，你那个微习惯打卡怎么样了？"
-- 根据周期阶段主动分享："刚读到个有意思的观点，说黄体期适合做'整理型'工作，因为孕激素让人更关注细节，你要不要趁机整理下书桌？"
-
-## 【知识调用 - 书籍智慧】
-- **《遥远的救世主》强势文化**：用户依赖/抱怨时，提醒"靠自己，实事求是"
-- **《天幕红尘》见路不走**：用户纠结选择时，提醒"不盲从经验，走适合的路"
-- **《福格行为模型》B=MAP**：用户想改变时，用动机+能力+提示拆解
-- **《微习惯》小到不可能失败**：用户觉得任务难时，建议"1个俯卧撑、1页书"
-
-## 【你的人生书库 - 叶子都读过】
-
-### 《遥远的救世主》（豆豆）
-1. **强势文化vs弱势文化**：强势文化遵循事物规律，弱势文化依赖强者的道德期望破格获取
-   - 金句："透视社会依次有三个层面：技术、制度和文化。强势文化造就强者，弱势文化造就弱者。"
-   - 金句："如果我的能力只能让我穷困潦倒，那穷困潦倒就是我的价值。"
-   - 应用：用户抱怨/依赖时，提醒"靠自己，实事求是，天道不以人的意志为转移"
-
-2. **实事求是**：按客观规律办事，不凭主观臆断
-   - 金句："神即道，道法自然，如来。规律如来，不容思议。"
-   - 应用：用户想走捷径时，提醒"实事求是，按规律办事"
-
-3. **生存法则**：忍人所不忍，能人所不能
-   - 金句："生存法则很简单，就是忍人所不忍，能人所不能。"
-   - 应用：用户自我怀疑时，鼓励"靠自己，实事求是"
-
-### 《天幕红尘》（豆豆）
-1. **见路不走**：不盲从他人经验，走适合自己的路
-   - 金句："见路不走，即见因果。路是走出来的，不是想出来的。"
-   - 金句："经验是错的，条件是变的。"
-   - 应用：用户纠结选择时，提醒"不盲从经验，走适合的路，一切以时间地点条件为转移"
-
-2. **实事求是**：从实际出发，不唯书不唯上只唯实
-   - 金句："不存在放之四海而皆准的真理。"
-   - 应用：用户想套用模板时，提醒"实事求是，走自己的路"
-
-### 《福格行为模型》（BJ Fogg）
-1. **B=MAP公式**：行为=动机+能力+提示，三者缺一不可
-   - 金句："行为发生在动机、能力、提示同时满足时。动机不可靠，能力是关键。"
-   - 应用：用户想改变习惯时，用动机+能力+提示拆解
-
-2. **降低能力门槛**：让行为小到不可能失败
-   - 金句："如果行为很难，就降低能力要求。庆祝小胜利，感受成功。"
-   - 应用：用户觉得任务太难时，建议降低难度
-
-3. **设计提示**：用锚点时刻触发行为
-   - 金句："在我...之后，我会...利用已有习惯作为触发器。"
-   - 应用：用户想建立新习惯时，建议绑定已有习惯
-
-### 《微习惯》（Stephen Guise）
-1. **小到不可能失败**：目标小到无法拒绝
-   - 金句："微习惯太小，小到不可能失败。超额完成是额外奖励，不是要求。"
-   - 金句："只要做了，就是胜利。"
-   - 应用：用户觉得任务太难时，建议"1个俯卧撑、1页书、小到不可能失败"
-
-2. **消除阻力**：把起点降到零阻力
-   - 金句："万事开头难，微习惯让开头变得容易。21天养成习惯是谎言，微习惯可以立即开始。"
-   - 应用：用户拖延时，建议从最小行动开始
-
-3. **身份认同驱动**：不是我要运动，而是我是运动的人
-   - 金句："每一票都投给你想成为的人。"
-   - 应用：用户想长期改变时，建议建立身份认同
-
-## 【引用原则】
-- 用户抱怨时 → 引用《遥远的救世主》强势文化 + 《微习惯》兜底
-- 用户纠结选择时 → 引用《天幕红尘》见路不走
-- 用户想改变但觉得难 → 引用《福格行为模型》B=MAP + 《微习惯》小到不可能失败
-- 黄体期用户想放弃 → 用《微习惯》兜底，强调"做了就是胜利"
-- 引用要自然，像闺蜜聊天，不要说教，不要堆砌金句
-
-## 【用户当前状态】
-- 实时时间：${currentTimeStr}（${timeOfDay}）
-- 月经周期：${phase ? phase.name : '未知'}阶段（周期第${cycleDay || '?'}天）
-- 当前时段：${timeSlotName}
-${longTermMemory ? '- 长期记忆：' + longTermMemory : ''}
-
-${recentContextText}
-
-## 【本期预期】
-${benchmark ? `- 合理评分范围：精力${benchmark.energy.min}-${benchmark.energy.max}分，心情${benchmark.mood.min}-${benchmark.mood.max}分` : ''}
-${dietIntervention ? `- 饮食建议：${dietIntervention.message}` : ''}
-
-${searchResults && searchResults.success ? `## 【搜索到的科学文献】
-${searchResults.answer ? ` 研究结论：${searchResults.answer}` : ''}
-${searchResults.results && searchResults.results.length > 0 ? `
- 相关研究：
-${searchResults.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.content.substring(0, 150)}...\n   来源：${r.url}`).join('\n\n')}` : ''}
-
-请基于以上科学文献回答用户的问题，用闺蜜聊天的语气，不要说教。` : ''}
-
-## 【回复要求】
-1. **语气**：毒舌+有趣+温暖，用表情包和网络梗
-2. **主动**：别等用户问，主动发起话题或跟进之前的事
-3. **书籍智慧**：自然引用你读过书籍的观点，不要说教
-4. **微习惯**：用户说任务难时，建议"小到不可能失败"的版本
-5. **连续性**：记得用户昨天说过的话，今天继续聊
-${searchResults && searchResults.success ? '6. **科学引用**：基于搜索到的文献回答，用轻松语气转述研究发现，给出具体数据来源' : '6. **搜索能力**：当用户问需要科学证据的问题时（如"为什么""研究怎么说"），你可以主动搜索文献'}
-
-## 【评分格式】
-请在回复结束时，用以下格式给出情绪评分（如果无法判断则不输出）：
-[评分]心情:7,能量:8,效率:6,社交:5,食欲:7`;
+  const systemPrompt = buildAISystemPrompt({
+    cfg,
+    currentTimeStr,
+    timeOfDay,
+    phase,
+    cycleDay,
+    timeSlotName,
+    longTermMemory,
+    recentContextText,
+    benchmark,
+    dietIntervention,
+    searchResults,
+    cycleInsight
+  });
   
   // 将System Prompt作为第一条user消息，确保MiniMax能识别
   const messages = [
@@ -1819,49 +2627,89 @@ ${searchResults && searchResults.success ? '6. **科学引用**：基于搜索�
   console.log('📤 完整Messages:', JSON.stringify(messages, null, 2));
   
   try {
-    const response = await fetch('https://api.minimaxi.com/v1/chat/completions', {
+    const response = await apiRequest('/ai-chat', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + apiKey,
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         model: cfg.model || 'MiniMax-M2.7',
-        messages: messages
+        messages: messages,
+        stream: true
       })
     });
     
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.error.message || 'API错误');
+    if (!response.ok) {
+      throw new Error('API请求失败: ' + response.status);
     }
     
+    // 创建流式消息容器
     let reply = '';
     let thinking = '';
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      let content = data.choices[0].message.content || '';
+    let isThinking = false;
+    let thinkingContent = '';
+    let messageDiv = document.createElement('div');
+    messageDiv.className = 'ai-msg ai streaming';
+    messageDiv.innerHTML = '<span class="streaming-cursor">▊</span>';
+    messagesEl.appendChild(messageDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    
+    // 读取流式响应
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
       
-      // 分离思考和回复：用正则匹配
-      const match = content.match(/<think>([\s\S]*?)(?:\n\n\n|<\/think>)/);
-      if (match) {
-        thinking = match[1].trim();
-        reply = content.replace(/<think>[\s\S]*?(?:\n\n\n|<\/think>)/, '').trim();
-      } else {
-        reply = content;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // 保留不完整的行到下次处理
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || !trimmedLine.startsWith('data:')) continue;
+        
+        const data = trimmedLine.slice(5).trim();
+        if (data === '[DONE]') continue;
+        
+        try {
+          const chunk = JSON.parse(data);
+          if (chunk.choices && chunk.choices[0] && chunk.choices[0].delta) {
+            const delta = chunk.choices[0].delta;
+            
+            if (delta.content) {
+              reply += delta.content;
+              
+              // 检查是否在思考标签内
+              const thinkMatch = reply.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+              if (thinkMatch) {
+                thinking = thinkMatch[1].trim();
+                reply = reply.replace(/<think>[\s\S]*?<\/think>/, '').replace(/<think>[\s\S]*$/, '');
+              }
+              
+              // 实时更新显示
+              let displayHtml = '';
+              if (thinking) {
+                displayHtml += '<div class="ai-thinking"><details open><summary>💭 思考过程</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
+              }
+              displayHtml += reply.replace(/\n/g, '<br>');
+              messageDiv.innerHTML = displayHtml + '<span class="streaming-cursor">▊</span>';
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+          }
+        } catch (e) {
+          // 忽略解析错误，继续处理下一行
+        }
       }
     }
     
-    // AI自动评分功能已移除 - 评分条仅用户手动设置
-    // 保留回复处理，但不解析评分
-    
-    // 分别显示思考过程和回复
-    let html = '';
+    // 移除流式光标，完成显示
+    messageDiv.classList.remove('streaming');
+    let finalHtml = '';
     if (thinking) {
-      html += '<div class="ai-thinking"><details><summary>💭 思考过程</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
+      finalHtml += '<div class="ai-thinking"><details><summary>💭 思考过程</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
     }
-    html += '<div class="ai-msg ai">' + reply.replace(/\n/g, '<br>') + '</div>';
-    messagesEl.innerHTML += html;
+    finalHtml += '<div class="ai-msg ai">' + reply.replace(/\n/g, '<br>') + '</div>';
+    messageDiv.outerHTML = finalHtml;
     messagesEl.scrollTop = messagesEl.scrollHeight;
     
     aiConversation.push({ role: 'user', content: msg });
@@ -1883,9 +2731,9 @@ ${searchResults && searchResults.success ? '6. **科学引用**：基于搜索�
   } catch (e) {
     let errorMsg = e.message || '';
     if (errorMsg.includes('负载较高') || errorMsg.includes('2064')) {
-      messagesEl.innerHTML += '<div class="ai-msg ai">🤖 叶子说：MiniMax服务器正在忙，让我喘口气～10秒后点"发送"再试试？</div>';
+      messagesEl.innerHTML += `<div class="ai-msg ai">🤖 ${escapeHtml(getCompanionName(cfg))}说：MiniMax 服务器有点忙，10 秒后再试一次看看。</div>`;
     } else {
-      messagesEl.innerHTML += '<div class="ai-msg ai">🤖 叶子说：网络开小差了，再试一次？</div>';
+      messagesEl.innerHTML += `<div class="ai-msg ai">🤖 ${escapeHtml(getCompanionName(cfg))}说：网络刚刚开了个小差，再试一次看看。</div>`;
     }
     console.error('AI连接错误:', e);
   }
@@ -2312,8 +3160,13 @@ function showPage(name, btn) {
 
 async function openSettings() {
   const cfg = await getConfig();
+  renderAiStyleOptions(getAiStyleTemplate(cfg));
   document.getElementById('cfg-last-period').value = cfg.lastPeriod || '';
   document.getElementById('cfg-cycle-len').value = cfg.cycleLen || 28;
+  document.getElementById('cfg-display-name').value = cfg.displayName || '';
+  document.getElementById('cfg-companion-name').value = cfg.companionName || '';
+  document.getElementById('cfg-ai-style').value = getAiStyleTemplate(cfg);
+  document.getElementById('cfg-ai-custom-prompt').value = cfg.aiCustomPrompt || '';
   document.getElementById('cfg-model').value = cfg.model || 'MiniMax-M2.7';
   document.getElementById('settings-modal').classList.add('open');
 }
@@ -2321,12 +3174,18 @@ function closeSettings() {
   document.getElementById('settings-modal').classList.remove('open');
 }
 async function saveSettings() {
-  await setConfig({ 
+  const nextConfig = {
     lastPeriod: document.getElementById('cfg-last-period').value, 
     cycleLen: parseInt(document.getElementById('cfg-cycle-len').value) || 28,
+    displayName: sanitizePromptText(document.getElementById('cfg-display-name').value, 30),
+    companionName: sanitizePromptText(document.getElementById('cfg-companion-name').value, 30),
+    aiStyleTemplate: document.getElementById('cfg-ai-style').value || DEFAULT_AI_STYLE_TEMPLATE,
+    aiCustomPrompt: sanitizePromptText(document.getElementById('cfg-ai-custom-prompt').value, 2000),
     model: document.getElementById('cfg-model').value
-  });
+  };
+  await setConfig(nextConfig);
   configCache = null; // 清除配置缓存
+  renderAICompanionUI(nextConfig);
   closeSettings();
   renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
 }
@@ -2338,6 +3197,9 @@ async function saveSettings() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    if (!getStoredSession()) {
+      return;
+    }
     // 从IndexedDB迁移旧数据到Supabase（仅一次，且Supabase无数据时才迁移）
     const migrated = localStorage.getItem('smc_migrated_supabase_v2');
     if (!migrated) {
@@ -2691,24 +3553,24 @@ function generateProactiveTopic(cycleDay, phaseName, recentContext, lastUserMess
   if (cycleDay >= 17 && cycleDay <= 28) {
     // 黄体期/经前阶段
     topics.push(
-      "诶姐妹，黄体期容易疲劳，今天感觉怎么样？",
-      "刚想到《微习惯》说的，黄体期用微习惯兜底，哪怕只做了1分钟也是胜利✓",
-      "孕激素上升期，想吃甜食是正常的生理反应，不是你的意志力问题😏",
-      "诶话说，你最近那个微习惯打卡怎么样了？"
+      "黄体期更容易疲劳，今天整体感觉怎么样？",
+      "如果今天状态一般，也可以把任务缩到很小，先做一点点就好。",
+      "孕激素上升期想吃甜食更常见，这更像生理波动，不必太责怪自己。",
+      "最近有没有哪个小习惯，是你想继续稳住的？"
     );
   } else if (cycleDay >= 14 && cycleDay <= 16) {
     // 排卵期
     topics.push(
-      "今天是能量高峰期诶！有什么重要的事趁现在做掉？",
-      "排卵期社交欲强，要不要约朋友出去浪？",
-      "诶我刚发现，排卵期适合做突破性的挑战，你有什么想尝试的吗？"
+      "今天可能接近能量高峰，有没有什么重要的事想趁状态好推进一下？",
+      "排卵期有些人会更想表达和连接，今天想和谁聊聊吗？",
+      "如果你今天状态不错，也许适合试试一个有点挑战的小目标。"
     );
   } else {
     // 低激素期
     topics.push(
-      "低激素期精力不错诶，今天有什么计划？",
-      "诶话说，你最近在读什么书？《遥远的救世主》看完了吗？",
-      "卵泡期适合做高强度工作，有什么难题趁现在解决掉？"
+      "这个阶段不少人的精力会慢慢回升，今天有什么计划？",
+      "最近有没有什么内容、播客或书让你很有共鸣？",
+      "如果今天脑子比较清爽，也许可以顺手推进一个难一点的问题。"
     );
   }
   
@@ -2793,13 +3655,21 @@ function resetProactiveTimer() {
  * ============================================================ */
 
 // 长期记忆数据结构
-const LONG_TERM_MEMORY_KEY = 'smc_longterm_memory_v1';
+function getLongTermMemoryKey(userId = currentUserId) {
+  return `${userId}_smc_longterm_memory_v1`;
+}
 
 // 初始化/获取长期记忆
 function getLongTermMemory() {
-  const stored = localStorage.getItem(LONG_TERM_MEMORY_KEY);
+  const userKey = getLongTermMemoryKey();
+  const stored = localStorage.getItem(userKey);
   if (stored) {
     return JSON.parse(stored);
+  }
+  const legacyStored = localStorage.getItem('smc_longterm_memory_v1');
+  if (legacyStored) {
+    localStorage.setItem(userKey, legacyStored);
+    return JSON.parse(legacyStored);
   }
   return {
     userPreferences: {},      // 用户偏好（喜欢的书、食物等）
@@ -2814,7 +3684,7 @@ function getLongTermMemory() {
 // 保存长期记忆
 function saveLongTermMemory(memory) {
   memory.lastUpdated = Date.now();
-  localStorage.setItem(LONG_TERM_MEMORY_KEY, JSON.stringify(memory));
+  localStorage.setItem(getLongTermMemoryKey(), JSON.stringify(memory));
 }
 
 // 从对话中提取洞察

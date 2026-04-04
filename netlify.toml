@@ -1,0 +1,8 @@
+[build]
+  command = ""
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/cycle_experiment.html"
+  status = 200
