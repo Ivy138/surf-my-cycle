@@ -2764,13 +2764,24 @@ async function sendAI() {
     
     // 移除流式光标，完成显示
     messageDiv.classList.remove('streaming');
+
+    // 清理回复中的思考标签内容（包括未完整闭合的标签）
+    let cleanReply = reply;
+    // 移除完整的 <think>...</think> 标签对
+    cleanReply = cleanReply.replace(/<think>[\s\S]*?<\/think>/g, '');
+    // 移除可能残留的未闭合 <think> 标签及之后的内容
+    if (cleanReply.includes('<think>')) {
+      cleanReply = cleanReply.substring(0, cleanReply.indexOf('<think>'));
+    }
+    // 清理可能被转义的标签
+    cleanReply = cleanReply.replace(/&lt;think&gt;/g, '').replace(/&lt;\/think&gt;/g, '');
+    cleanReply = cleanReply.trim();
+
     let finalHtml = '';
     if (thinking) {
       // 最终显示时默认折叠（不使用 open 属性）
       finalHtml += '<div class="ai-thinking"><details><summary>💭 思考过程（点击展开）</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
     }
-    // 清理可能残留的思考标签
-    const cleanReply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     finalHtml += '<div class="ai-msg ai">' + cleanReply.replace(/\n/g, '<br>') + '</div>';
     messageDiv.outerHTML = finalHtml;
     messagesEl.scrollTop = messagesEl.scrollHeight;
