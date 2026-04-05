@@ -2731,21 +2731,27 @@ async function sendAI() {
             if (delta.content) {
               reply += delta.content;
 
-              // 提取思考内容：找 <think>...</think> 标签对
-              const thinkMatch = reply.match(/<think>([\s\S]*?)<\/think>/);
-              if (thinkMatch && !thinking) {
-                // 首次找到思考标签，提取内容
-                thinking = thinkMatch[1].trim();
-                // 把思考标签内的内容替换为空，保留实际回复
-                reply = reply.replace(/<think>[\s\S]*?<\/think>/, '');
+              // 提取思考内容：尝试匹配完整的 <think>...</think> 标签对
+              if (!thinking) {
+                const thinkMatch = reply.match(/<think>([\s\S]*?)<\/think>/);
+                if (thinkMatch) {
+                  thinking = thinkMatch[1].trim();
+                }
               }
 
               // 实时更新显示（流式过程中保持展开）
+              // 移除思考标签对后显示回复内容
+              let displayReply = reply.replace(/<think>[\s\S]*?<\/think>/, '');
+              // 如果还有残留的 <think> 标签（说明思考还没结束），暂时不显示它
+              if (displayReply.includes('<think>')) {
+                displayReply = displayReply.substring(0, displayReply.indexOf('<think>'));
+              }
+
               let displayHtml = '';
               if (thinking) {
                 displayHtml += '<div class="ai-thinking"><details open><summary>💭 思考过程（点击折叠）</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
               }
-              displayHtml += reply.replace(/\n/g, '<br>');
+              displayHtml += displayReply.replace(/\n/g, '<br>');
               messageDiv.innerHTML = displayHtml + '<span class="streaming-cursor">▊</span>';
               messagesEl.scrollTop = messagesEl.scrollHeight;
             }
