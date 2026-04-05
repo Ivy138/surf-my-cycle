@@ -2731,12 +2731,13 @@ async function sendAI() {
             if (delta.content) {
               reply += delta.content;
 
-              // 提取思考内容并从回复中移除
-              const thinkMatch = reply.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-              if (thinkMatch) {
+              // 提取思考内容：找 <think>...</think> 标签对
+              const thinkMatch = reply.match(/<think>([\s\S]*?)<\/think>/);
+              if (thinkMatch && !thinking) {
+                // 首次找到思考标签，提取内容
                 thinking = thinkMatch[1].trim();
-                // 移除思考标签及其内容
-                reply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*$/, '');
+                // 把思考标签内的内容替换为空，保留实际回复
+                reply = reply.replace(/<think>[\s\S]*?<\/think>/, '');
               }
 
               // 实时更新显示（流式过程中保持展开）
@@ -2762,7 +2763,9 @@ async function sendAI() {
       // 最终显示时默认折叠（不使用 open 属性）
       finalHtml += '<div class="ai-thinking"><details><summary>💭 思考过程（点击展开）</summary><div class="thinking-content">' + thinking.replace(/\n/g, '<br>') + '</div></details></div>';
     }
-    finalHtml += '<div class="ai-msg ai">' + reply.replace(/\n/g, '<br>') + '</div>';
+    // 清理可能残留的思考标签
+    const cleanReply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    finalHtml += '<div class="ai-msg ai">' + cleanReply.replace(/\n/g, '<br>') + '</div>';
     messageDiv.outerHTML = finalHtml;
     messagesEl.scrollTop = messagesEl.scrollHeight;
     
