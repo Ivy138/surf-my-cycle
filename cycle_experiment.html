@@ -2731,27 +2731,19 @@ async function sendAI() {
             if (delta.content) {
               reply += delta.content;
 
-              // 提取思考内容：找 <think> 开头到 </think> 结尾之间的内容
+              // 提取思考内容：精确匹配 <think>...</think> 标签对
               if (!thinking) {
-                const thinkStart = reply.indexOf('<think>');
-                const thinkEnd = reply.indexOf('</think>');
-                if (thinkStart !== -1 && thinkEnd !== -1 && thinkEnd > thinkStart) {
-                  // 提取思考内容（不包含标签本身）
-                  const rawThinking = reply.substring(thinkStart + 7, thinkEnd);
-                  if (rawThinking.trim()) {
-                    thinking = rawThinking.trim();
-                  }
+                const thinkMatch = reply.match(/<think>([\s\S]*?)<\/think>/);
+                if (thinkMatch && thinkMatch[1]) {
+                  thinking = thinkMatch[1].trim();
                 }
               }
 
               // 计算要显示的回复（移除思考标签后的内容）
               let displayReply = reply;
               if (thinking) {
-                // 找到思考结束标签的位置，移除它之后的所有内容
-                const thinkEndIdx = displayReply.indexOf('</think>');
-                if (thinkEndIdx !== -1) {
-                  displayReply = displayReply.substring(thinkEndIdx + 8);
-                }
+                // 用正则移除思考标签对（匹配第一个完整的标签对）
+                displayReply = displayReply.replace(/<think>[\s\S]*?<\/think>/, '');
               }
               // 如果还有残留的 <think>（思考还没结束），不显示它
               if (displayReply.includes('<think>')) {
