@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surf My Cycle</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- 登录页面 -->
+<div id="login-page" class="login-container">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>🌊 Surf My Cycle</h1>
+      <p class="tagline">你的<span class="highlight">精力管理</span>伙伴</p>
+    </div>
+
+    <div class="login-form">
+      <div class="login-input-group">
+        <label>账号</label>
+        <input type="text" id="login-username" placeholder="请输入账号" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+
+      <div class="login-input-group">
+        <label>密码</label>
+        <input type="password" id="login-password" placeholder="请输入密码" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+
+      <button class="login-btn" onclick="doLogin()">登录</button>
+
+      <div class="login-divider">
+        <span>或者</span>
+      </div>
+
+      <button class="login-btn secondary" onclick="showRegister()">注册新账号</button>
+    </div>
+
+    <div class="login-features">
+      <div class="login-feature">
+        <div class="icon">⚡</div>
+        <div class="text">追踪能量波动</div>
+      </div>
+      <div class="login-feature">
+        <div class="icon">🤖</div>
+        <div class="text">AI 智能陪伴</div>
+      </div>
+      <div class="login-feature">
+        <div class="icon">📊</div>
+        <div class="text">发现个人模式</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 注册页面 -->
+<div id="register-page" class="login-container" style="display:none">
+  <div class="login-box">
+    <div class="login-brand">
+      <h1>📝 注册账号</h1>
+      <p class="tagline">开启你的<span class="highlight">精力管理</span>之旅</p>
+    </div>
+
+    <div class="login-form">
+      <div class="login-input-group">
+        <label>账号</label>
+        <input type="text" id="reg-username" placeholder="3-20位字母/数字/下划线" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+
+      <div class="login-input-group">
+        <label>密码</label>
+        <input type="password" id="reg-password" placeholder="至少6位" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+
+      <div class="login-input-group">
+        <label>确认密码</label>
+        <input type="password" id="reg-password2" placeholder="再次输入密码" onkeypress="if(event.key==='Enter')doRegister()">
+      </div>
+
+      <button class="login-btn" onclick="doRegister()">注册</button>
+
+      <div class="login-switch">
+        已有账号？<a onclick="showLogin()">立即登录</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 主应用容器 -->
+<div id="app-container" class="app-container">
+<header>
+  <h1>Surf My Cycle</h1>
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('record',this)">记录</button>
+    <button class="tab" onclick="showPage('analysis',this)">分析</button>
+  </div>
+  <div class="user-shell">
+    <button class="user-badge" id="user-badge" onclick="openUserPanel()">
+      <div class="user-badge-label">用户</div>
+      <div class="user-badge-name" id="user-badge-name">未登录</div>
+    </button>
+    <button class="tab" onclick="openSettings()" style="margin-left:8px">设置</button>
+    <button class="tab" onclick="doLogout()" style="background:var(--accent-light);color:var(--accent)">退出</button>
+  </div>
+</header>
+
+<div id="page-record" class="page active">
+  <div class="cal-panel">
+    <div class="cal-nav">
+      <button onclick="prevMonth('r')">上月</button>
+      <h3 id="r-month-title"></h3>
+      <button onclick="nextMonth('r')">下月</button>
+    </div>
+    <div class="cal-grid" id="r-grid"></div>
+    <div class="legend" id="cycle-legend">
+      <div class="legend-item"><div class="legend-color" style="background:rgba(231,76,60,0.2)"></div>月经期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(243,156,18,0.2)"></div>卵泡期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(233,30,99,0.2)"></div>排卵期</div>
+      <div class="legend-item"><div class="legend-color" style="background:rgba(155,89,182,0.2)"></div>黄体期</div>
+    </div>
+  </div>
+  <div class="rec-panel" id="rec-panel">
+    <div class="rec-date-info" id="rec-header">
+      <div class="empty-state-new">
+        <div class="empty-state-new-icon">📅</div>
+        <div class="empty-state-new-text">点击日历中的日期<br>开始记录你的周期</div>
+      </div>
+    </div>
+    <div id="rec-form" style="display:none;flex-direction:column;padding:16px">
+
+      <div class="phase-override-card">
+        <div class="phase-override-header">
+          <div>
+            <div class="phase-override-title">今天的阶段判断</div>
+            <div class="phase-override-desc" id="phase-override-desc">系统会先给预测，你也可以按自己的体感调整。</div>
+          </div>
+          <button class="phase-override-reset" id="phase-override-reset" onclick="clearManualPhaseOverride()" type="button">恢复系统预测</button>
+        </div>
+        <div class="phase-override-summary">
+          <span class="phase-pill predicted" id="predicted-phase-pill">系统预测：-</span>
+          <span class="phase-pill effective" id="effective-phase-pill">当前使用：-</span>
+        </div>
+        <div class="phase-override-options" id="phase-override-options">
+          <button type="button" class="phase-option" data-phase="月经期" onclick="selectManualPhaseOverride('月经期')">月经期</button>
+          <button type="button" class="phase-option" data-phase="卵泡期" onclick="selectManualPhaseOverride('卵泡期')">卵泡期</button>
+          <button type="button" class="phase-option" data-phase="排卵期" onclick="selectManualPhaseOverride('排卵期')">排卵期</button>
+          <button type="button" class="phase-option" data-phase="黄体期" onclick="selectManualPhaseOverride('黄体期')">黄体期</button>
+        </div>
+      </div>
+
+      <!-- 时间段选择器 -->
+      <div class="time-tabs">
+        <div class="time-tab active" data-time="morning" onclick="selectTimeSlot(this)">🌅 早上</div>
+        <div class="time-tab" data-time="afternoon" onclick="selectTimeSlot(this)">☀️ 下午</div>
+        <div class="time-tab" data-time="evening" onclick="selectTimeSlot(this)">🌙 晚上</div>
+      </div>
+
+      <!-- AI聊天区域 -->
+      <div class="ai-chat" id="ai-chat" style="margin-bottom:20px">
+        <div class="ai-chat-header">
+          <h4 id="ai-chat-title">🍃 和你的 AI 伙伴聊聊</h4>
+        </div>
+        <div class="ai-chat-messages" id="ai-messages"></div>
+        <div class="ai-input-row">
+          <input type="text" id="ai-input" placeholder="告诉 AI 伙伴你的感受..." onkeydown="handleAIInputKeydown(event)">
+          <button onclick="sendAI()" id="ai-send-btn">发送</button>
+        </div>
+      </div>
+
+      <!-- 笔记区域 -->
+      <div class="card" style="padding:16px 20px;margin-bottom:20px">
+        <div class="card-title" style="font-size:13px;color:var(--muted);margin-bottom:6px">📝 Summary</div>
+        <div id="rec-summary-meta" class="summary-meta">这个时段的重要内容会在到点后自动整理，你也可以继续手动修改。</div>
+        <textarea id="rec-note" rows="2" placeholder="记录这个时段的感受、想法或发生的事情..." style="border:none;padding:0;font-size:14px;min-height:60px"></textarea>
+      </div>
+
+      <div class="card todo-card">
+        <div class="card-title">✅ 今日 To Do</div>
+        <div class="todo-input-row">
+          <input type="text" id="todo-input" placeholder="把今天想做的事记下来..." onkeydown="handleTodoInputKeydown(event)">
+          <button type="button" id="todo-add-btn" onclick="addTodoItem()">添加</button>
+        </div>
+        <div class="todo-meta" id="todo-meta">今天还没有任务，先写下一件最想完成的事吧。</div>
+        <div class="todo-list" id="todo-list"></div>
+      </div>
+
+      <!-- 状态评分 -->
+      <div class="card">
+        <div class="card-title">📊 状态评分</div>
+        <div id="score-benchmark"></div>
+        <div class="slider-row">
+          <label>心情</label>
+          <input type="range" id="s-mood" min="1" max="10" value="5" oninput="document.getElementById('v-mood').textContent=this.value">
+          <span id="v-mood">5</span>
+        </div>
+        <div class="slider-row">
+          <label>能量</label>
+          <input type="range" id="s-energy" min="1" max="10" value="5" oninput="document.getElementById('v-energy').textContent=this.value">
+          <span id="v-energy">5</span>
+        </div>
+        <div class="slider-row">
+          <label>效率</label>
+          <input type="range" id="s-focus" min="1" max="10" value="5" oninput="document.getElementById('v-focus').textContent=this.value">
+          <span id="v-focus">5</span>
+        </div>
+        <div class="slider-row">
+          <label>社交</label>
+          <input type="range" id="s-social" min="1" max="10" value="5" oninput="document.getElementById('v-social').textContent=this.value">
+          <span id="v-social">5</span>
+        </div>
+        <div class="slider-row">
+          <label>食欲</label>
+          <input type="range" id="s-appetite" min="1" max="10" value="5" oninput="document.getElementById('v-appetite').textContent=this.value">
+          <span id="v-appetite">5</span>
+        </div>
+      </div>
+
+      <!-- 饮食提醒 -->
+      <div id="diet-intervention"></div>
+
+      <!-- 标签和生理期 -->
+      <div class="card">
+        <div class="card-title">🏷️ 标签 & 生理期</div>
+        <select id="rec-period">
+          <option value="">无月经</option>
+          <option value="light">月经轻量</option>
+          <option value="medium">月经中量</option>
+          <option value="heavy">月经大量</option>
+          <option value="spotting">点滴出血</option>
+        </select>
+        <div id="recommended-chips"></div>
+        <div class="chips" id="custom-chips">
+          <div class="chip" onclick="toggleChip(this)">甜食</div>
+          <div class="chip" onclick="toggleChip(this)">咸味</div>
+          <div class="chip" onclick="toggleChip(this)">碳水</div>
+          <div class="chip" onclick="toggleChip(this)">蛋白质</div>
+          <div class="chip" onclick="toggleChip(this)">辛辣</div>
+          <div class="chip" onclick="toggleChip(this)">冷饮</div>
+          <div class="chip" onclick="toggleChip(this)">情绪化</div>
+          <div class="chip" onclick="toggleChip(this)">专注</div>
+          <div class="chip" onclick="toggleChip(this)">创意</div>
+          <div class="chip" onclick="toggleChip(this)">理性</div>
+          <div class="chip" onclick="toggleChip(this)">躁动</div>
+          <div class="chip" onclick="toggleChip(this)">平静</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="new-chip-input" placeholder="输入新标签..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px" onkeypress="if(event.key==='Enter')addNewChip()">
+          <button onclick="addNewChip()" style="padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">+ 添加</button>
+        </div>
+      </div>
+
+      <div id="record-save-status" class="record-save-status">未修改</div>
+      <button class="save-btn" onclick="saveRecord()">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-analysis" class="page">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num" id="stat-days">0</div><div class="lbl">累计记录天数</div></div>
+    <div class="stat-card"><div class="num" id="stat-mood">-</div><div class="lbl">平均心情</div></div>
+    <div class="stat-card"><div class="num" id="stat-streak">0</div><div class="lbl">连续记录天数</div></div>
+  </div>
+
+  <!-- 个性化模式分析 -->
+  <div class="chart-card" style="background:linear-gradient(135deg,#fff5f7 0%,#fff 100%);border:2px solid var(--accent)">
+    <h3 style="color:var(--accent);display:flex;align-items:center;gap:8px">
+      <span>✨</span> 你的独特模式
+      <span style="font-size:11px;font-weight:400;color:var(--muted)">基于科学基线 + 你的实际数据</span>
+    </h3>
+    <div id="personal-pattern-analysis" style="margin-top:12px">
+      <div class="empty-state" style="padding:20px">记录至少一个完整周期后，将生成你的个性化分析...</div>
+    </div>
+  </div>
+
+  <!-- 周期流程图 -->
+  <div class="chart-card">
+    <h3>📈 月经周期能量流转图</h3>
+    <div class="mermaid-container" style="text-align:center;padding:10px;overflow-x:auto">
+      <pre class="mermaid">
+flowchart LR
+    subgraph A[月经期 1-5天]
+        direction TB
+        A1[雌孕激素低谷]
+        A2[身体修复]
+        A3[允许休息]
+    end
+
+    subgraph B[卵泡期 6-13天]
+        direction TB
+        B1[雌激素上升]
+        B2[精力回升]
+        B3[适合挑战]
+    end
+
+    subgraph C[排卵期 14-16天]
+        direction TB
+        C1[激素峰值]
+        C2[能量最高]
+        C3[状态最佳]
+    end
+
+    subgraph D[黄体期 17-28天]
+        direction TB
+        D1[孕激素升高]
+        D2[易疲劳]
+        D3[注意营养]
+    end
+
+    A -->|Day 6| B
+    B -->|Day 14| C
+    C -->|Day 17| D
+    D -->|Day 1| A
+
+    style A fill:#e74c3c,stroke:#c0392b,color:#fff
+    style B fill:#f39c12,stroke:#d68910,color:#fff
+    style C fill:#e91e63,stroke:#c2185b,color:#fff
+    style D fill:#9b59b6,stroke:#7d3c98,color:#fff
+      </pre>
+    </div>
+  </div>
+
+  <div class="chart-card"><h3>最近30天 心情与能量趋势</h3><canvas id="trend-chart" height="180"></canvas></div>
+  <div class="chart-card"><h3>各周期阶段平均评分</h3><canvas id="phase-chart" height="180"></canvas></div>
+</div>
+
+<div class="modal" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>设置</h3>
+      <button class="modal-close" onclick="closeSettings()">x</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">周期设置</div>
+        <div class="form-row"><label>上次月经开始日期</label><input type="date" id="cfg-last-period"></div>
+        <div class="form-row-inline">
+          <label>周期长度</label>
+          <input type="number" id="cfg-cycle-len" value="28" min="21" max="45">
+          <span style="color:var(--muted);font-size:12px">天</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">AI 伙伴</div>
+        <div class="form-row"><label>你的称呼</label><input type="text" id="cfg-display-name" maxlength="30" placeholder="留空显示你"></div>
+        <div class="form-row"><label>AI伙伴名字</label><input type="text" id="cfg-companion-name" maxlength="30" placeholder="例如：叶子、Luna"></div>
+        <div class="form-row">
+          <label>陪伴风格</label>
+          <select id="cfg-ai-style" onchange="handleAiStyleSettingsChange()"></select>
+        </div>
+        <div class="prompt-template-card">
+          <div class="prompt-template-head">
+            <div>
+              <div class="prompt-template-title" id="cfg-ai-style-title">当前风格模板</div>
+              <div class="prompt-template-summary" id="cfg-ai-style-summary"></div>
+            </div>
+            <button type="button" class="prompt-template-btn" onclick="applySelectedTemplateToCustomPrompt()">载入到自定义区</button>
+          </div>
+          <textarea id="cfg-ai-template-preview" readonly></textarea>
+        </div>
+        <div class="form-row"><label>AI模型</label><select id="cfg-model"><option value="MiniMax-M2.7">MiniMax-M2.7</option><option value="MiniMax-M2.7-highspeed">MiniMax-M2.7 快速版</option><option value="MiniMax-M2.5">MiniMax-M2.5</option><option value="MiniMax-M2">MiniMax-M2</option></select></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">自定义提示词</div>
+        <div class="form-help">这里会叠加在当前风格模板之上。适合写你的偏好，比如“少一点安慰，多一点行动建议”。</div>
+        <div class="form-row"><textarea id="cfg-ai-custom-prompt" placeholder="例如：多鼓励我、少用表情、先共情再给建议"></textarea></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">数据</div>
+        <button class="login-btn secondary" onclick="exportData()" style="font-size:13px;margin-bottom:8px">导出数据备份</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeSettings()">取消</button>
+      <button class="btn-save" id="settings-save-btn" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="user-panel-modal" onclick="if(event.target===this)closeUserPanel()">
+  <div class="modal-box user-panel-box">
+    <div class="modal-header">
+      <h3>账户中心</h3>
+      <button class="modal-close" onclick="closeUserPanel()">x</button>
+    </div>
+    <div class="modal-body">
+      <div class="user-panel-card">
+        <div class="user-panel-title" id="user-panel-display-name">未设置昵称</div>
+        <div class="user-panel-sub" id="user-panel-username">账号</div>
+      </div>
+      <div class="user-panel-overview">
+        <div class="user-panel-overview-item">
+          <div class="user-panel-overview-label">当前账号</div>
+          <div class="user-panel-overview-value" id="user-panel-account">-</div>
+        </div>
+        <div class="user-panel-overview-item">
+          <div class="user-panel-overview-label">当前陪伴角色</div>
+          <div class="user-panel-overview-value" id="user-panel-style">未设置</div>
+        </div>
+      </div>
+      <div class="user-panel-group">
+        <div class="user-panel-row">
+          <span class="user-panel-label">你的称呼</span>
+          <input type="text" id="user-panel-name-input" maxlength="30" placeholder="留空显示账号">
+        </div>
+        <div class="user-panel-row">
+          <span class="user-panel-label">AI 伙伴</span>
+          <input type="text" id="user-panel-companion-input" maxlength="30" placeholder="例如：叶子、Luna">
+        </div>
+        <div class="user-panel-row">
+          <span class="user-panel-label">陪伴风格</span>
+          <select id="user-panel-style-select"></select>
+        </div>
+        <div class="user-panel-row compact">
+          <span class="user-panel-label">当前周期</span>
+          <span class="user-panel-value" id="user-panel-cycle-summary">尚未设置</span>
+        </div>
+      </div>
+      <div class="user-panel-hint">这里适合改你最常用的资料。周期日期、模型和自定义提示词这些更完整的内容，仍然放在设置里。</div>
+      <div class="user-panel-actions">
+        <button class="login-btn" id="user-panel-save-btn" onclick="saveUserPanel()">保存资料</button>
+        <button class="login-btn secondary" onclick="closeUserPanel();openSettings()">更多设置</button>
+        <button class="login-btn secondary" onclick="exportData()">导出数据备份</button>
+        <button class="login-btn" onclick="closeUserPanel();doLogout()">退出登录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新用户引导弹层 -->
+<div class="modal" id="onboarding-modal">
+  <div class="modal-box onboarding-box">
+    <div class="onboarding-header">
+      <h2>欢迎使用 Surf My Cycle</h2>
+      <p>在开始之前，让我们先做一些基础设置</p>
+    </div>
+    <div class="onboarding-body">
+      <div class="onboarding-step" id="ob-step-1">
+        <div class="ob-step-title">第一步：先建立你的周期档案</div>
+        <div class="form-help">这些信息只用于你的账号，不会默认沿用其他人的数据。</div>
+        <div class="form-row">
+          <label>最近一次月经开始日期</label>
+          <input type="date" id="ob-last-period">
+        </div>
+        <div class="form-row">
+          <label>周期长度</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="range" id="ob-cycle-len" min="21" max="35" value="28" style="flex:1" oninput="document.getElementById('ob-cycle-len-val').textContent=this.value">
+            <span id="ob-cycle-len-val" style="font-weight:600;color:var(--accent);min-width:30px">28</span>
+            <span style="color:var(--muted)">天</span>
+          </div>
+        </div>
+      </div>
+      <div class="onboarding-step" id="ob-step-2" style="display:none">
+        <div class="ob-step-title">第二步：设置你的陪伴方式</div>
+        <div class="form-row">
+          <label>你希望怎么称呼你</label>
+          <input type="text" id="ob-display-name" maxlength="30" placeholder="例如：Mia、苗青、留空则显示账号">
+        </div>
+        <div class="form-row">
+          <label>AI 伙伴名字（可选）</label>
+          <input type="text" id="ob-companion-name" maxlength="30" placeholder="例如：叶子、Luna">
+        </div>
+        <div class="ob-style-grid" id="ob-style-grid"></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="skipOnboarding()" style="background:transparent;border:none;color:var(--muted)">跳过</button>
+      <button class="btn-save" onclick="nextOnboardingStep()" id="ob-next-btn">下一步</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="js/memory-integration.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

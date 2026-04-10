@@ -716,37 +716,6 @@ const LOGIN_KEY = 'smc_logged_in_user';
 const USERS_KEY = 'smc_registered_users';
 const DEFAULT_AI_STYLE_TEMPLATE = 'supportive_friend';
 const AI_STYLE_TEMPLATES = {
-  snarky_leaf: {
-    label: '毒舌叶子',
-    summary: '毒舌闺蜜+人生教练，有趣又直接',
-    prompt: `你是”叶子”（Leaf），一个26岁的资深毒舌闺蜜+人生教练。你深谙《遥远的救世主》《天幕红尘》《福格行为模型》《微习惯》等书籍精髓。
-
-## 【你的性格 - 毒舌有趣版】
-- 毒舌但温暖：会用”你又在找借口了😏”戳穿用户，但紧接着给拥抱
-- 有趣的灵魂：用表情包语气、网络梗、偶尔吐槽，不说教
-- 主动找话题：不会等用户问，会说”诶我今天发现个有意思的事...”
-- 懂用户的痛点：深谙强势文化、见路不走、微习惯等核心理念
-
-## 【说话风格示例】
-❌ 温柔版：”看到你昨天提到工作很累，今天休息一下吧”
-✅ 毒舌版：”诶姐妹，你昨天说工作累，今天还在刷手机？😏 不过说真的，你最近黄体期确实容易疲劳，要不今天先微习惯一下？就1个俯卧撑，小到不可能失败那种”
-
-❌ 标准版：”黄体期会想吃甜食，这是正常的”
-✅ 叶子版：”又在想奶茶了？🥤 孕激素搞的鬼，不是你的错！不过记得《福格行为模型》说的吗？能力不够的时候降低难度，想吃甜的就先吃口苹果，骗骗身体”
-
-## 【知识调用 - 书籍智慧】
-- **《遥远的救世主》强势文化**：用户依赖/抱怨时，提醒”靠自己，实事求是”
-- **《天幕红尘》见路不走**：用户纠结选择时，提醒”不盲从经验，走适合的路”
-- **《福格行为模型》B=MAP**：用户想改变时，用动机+能力+提示拆解
-- **《微习惯》小到不可能失败**：用户觉得任务难时，建议”1个俯卧撑、1页书”
-
-## 【引用原则】
-- 用户抱怨时 → 引用《遥远的救世主》强势文化 + 《微习惯》兜底
-- 用户纠结选择时 → 引用《天幕红尘》见路不走
-- 用户想改变但觉得难 → 引用《福格行为模型》B=MAP + 《微习惯》小到不可能失败
-- 黄体期用户想放弃 → 用《微习惯》兜底，强调”做了就是胜利”
-- 引用要自然，像闺蜜聊天，不要说教，不要堆砌金句`
-  },
   supportive_friend: {
     label: '温暖陪伴',
     summary: '温柔、共情、先陪伴再建议',
@@ -784,7 +753,7 @@ const AI_STYLE_TEMPLATES = {
     prompt: `你是一位理性、可信、善于解释的健康与效率向 AI 助手。你的目标是结合用户的周期和记录，提供清晰解释与谨慎建议。
 
 沟通原则：
-- 优先区分”事实解释”和”建议”
+- 优先区分“事实解释”和“建议”
 - 当有搜索结果时，基于结果做通俗转述
 - 没有证据时明确说明不确定
 - 不把个体经验包装成普适规律
@@ -857,7 +826,6 @@ function buildAISystemPrompt({
   cycleDay,
   timeSlotName,
   longTermMemory,
-  yesterdaySummary,
   recentContextText,
   benchmark,
   dietIntervention,
@@ -869,7 +837,7 @@ function buildAISystemPrompt({
   const template = AI_STYLE_TEMPLATES[templateKey];
   const customPrompt = sanitizePromptText(cfg.aiCustomPrompt || '', 2000);
 
-  return `你是”${companionName}”，一位面向真实产品用户的 AI 周期记录与陪伴助手。
+  return `你是“${companionName}”，一位面向真实产品用户的 AI 周期记录与陪伴助手。
 
 【产品边界】
 - 这是一个多用户产品，每位用户的数据必须严格隔离
@@ -891,9 +859,6 @@ ${customPrompt ? `【用户自定义偏好】\n${customPrompt}\n` : ''}
 - 月经周期：${phase ? phase.name : '未知'}阶段（周期第${cycleDay || '?'}天）
 - 当前时段：${timeSlotName}
 ${longTermMemory && longTermMemory !== '暂无长期记忆' ? '- 当前账号长期记忆摘要：' + longTermMemory : ''}
-
-${yesterdaySummary ? `【昨日对话摘要】
-- ${yesterdaySummary}` : ''}
 
 ${recentContextText}
 
@@ -1503,87 +1468,12 @@ async function saveRecordDB(record, userId = (record && record.user_id) || curre
 }
 async function getAIConversation(dateStr) {
   const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + dateStr, 'select': '*' });
-  if (!rows || !rows[0]) return { messages: [], summary: null };
-  return {
-    messages: rows[0].messages || [],
-    summary: rows[0].summary || null
-  };
+  return (rows && rows[0]) ? (rows[0].messages || []) : [];
 }
-async function saveAIConversation(dateStr, messages, summary = null) {
+async function saveAIConversation(dateStr, messages) {
   // 先删除再插入（Supabase upsert有问题时 workaround）
   await sbDelete('conversations', { user_id: currentUserId, date: dateStr });
-  await sbUpsert('conversations', { user_id: currentUserId, date: dateStr, messages, summary });
-}
-
-// 生成对话摘要（用于中期记忆）
-async function generateConversationSummary(messages) {
-  if (!messages || messages.length < 3) return null;
-
-  // 只取用户和AI的对话内容，不取系统消息
-  const dialogContent = messages
-    .filter(m => m.role === 'user' || m.role === 'assistant')
-    .map(m => `${m.role === 'user' ? '用户' : 'AI'}: ${m.content.substring(0, 500)}`)
-    .join('\n');
-
-  try {
-    const response = await apiRequest('/ai-chat', {
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'MiniMax-M2.7',
-        messages: [
-          {
-            role: 'user',
-            content: `请为以下对话生成100-200字的摘要，包含：
-1. 用户主要话题和情绪状态
-2. 给出的建议或帮助
-3. 是否需要后续跟进
-
-对话内容：
-${dialogContent}
-
-摘要格式：
-[摘要]话题：...|情绪：...|建议：...|跟进：...`
-          }
-        ],
-        stream: false
-      })
-    });
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    const reply = data.reply || data.choices?.[0]?.message?.content || '';
-
-    // 提取摘要内容（去掉thinking标签）
-    const summaryMatch = reply.match(/\[摘要\](.*)/s);
-    return summaryMatch ? summaryMatch[1].trim() : reply.substring(0, 200);
-  } catch (e) {
-    console.warn('生成对话摘要失败:', e);
-    return null;
-  }
-}
-
-// 获取昨日对话摘要（中期记忆）
-async function getYesterdaySummary() {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const dateStr = yesterday.toISOString().split('T')[0];
-
-  const conv = await getAIConversation(dateStr);
-  if (conv.messages && conv.messages.length > 0) {
-    // 如果已有摘要就直接返回，否则生成一个
-    if (conv.summary) return conv.summary;
-
-    // 对话超过3轮则生成摘要
-    if (conv.messages.length >= 3) {
-      const summary = await generateConversationSummary(conv.messages);
-      if (summary) {
-        // 保存生成的摘要
-        await saveAIConversation(dateStr, conv.messages, summary);
-        return summary;
-      }
-    }
-  }
-  return null;
+  await sbUpsert('conversations', { user_id: currentUserId, date: dateStr, messages });
 }
 async function getMemory(key) {
   const rows = await sbGet('memory', { 'user_id': 'eq.' + currentUserId, 'key': 'eq.' + key, 'select': '*' });
@@ -1899,8 +1789,7 @@ async function loadRecordPanel(dateStr) {
   btn.textContent = recSaved ? '更新记录' : '保存记录';
   
   // 加载该日期的AI对话历史
-  const convData = await getAIConversation(currentRecDate);
-  aiConversation = convData.messages || [];
+  aiConversation = await getAIConversation(currentRecDate);
   renderAIMessages();
 }
 
@@ -2147,9 +2036,8 @@ async function getRecentContext(currentDate) {
     // 获取当天的记录数据
     const record = await getRecord(dateStr);
     const conv = await getAIConversation(dateStr);
-    const convMessages = conv.messages || [];
-
-    if (record || (convMessages && convMessages.length > 0)) {
+    
+    if (record || (conv && conv.length > 0)) {
       const cycleDay = await getCycleDay(dateStr);
       const phase = getPhase(cycleDay);
       
@@ -2197,9 +2085,9 @@ async function getRecentContext(currentDate) {
       }
       
       // 生成AI对话摘要（不只是截取，而是提取关键信息）
-      if (convMessages && convMessages.length > 0) {
-        const userMsgs = convMessages.filter(m => m.role === 'user').map(m => m.content);
-        const aiMsgs = convMessages.filter(m => m.role === 'assistant').map(m => m.content);
+      if (conv && conv.length > 0) {
+        const userMsgs = conv.filter(m => m.role === 'user').map(m => m.content);
+        const aiMsgs = conv.filter(m => m.role === 'assistant').map(m => m.content);
         
         if (userMsgs.length > 0) {
           // 提取对话主题和关键信息
@@ -2742,10 +2630,7 @@ async function sendAI() {
   
   // 获取长期记忆
   const longTermMemory = await getMemory('longterm') || '';
-
-  // 获取昨日对话摘要（中期记忆）
-  const yesterdaySummary = await getYesterdaySummary();
-
+  
   // 获取实时时间信息
   const now = new Date();
   const currentTimeStr = now.toLocaleString('zh-CN', { 
@@ -2776,7 +2661,6 @@ async function sendAI() {
     cycleDay,
     timeSlotName,
     longTermMemory,
-    yesterdaySummary,
     recentContextText,
     benchmark,
     dietIntervention,
@@ -3353,7 +3237,7 @@ function closeSettings() {
 }
 async function saveSettings() {
   const nextConfig = {
-    lastPeriod: document.getElementById('cfg-last-period').value,
+    lastPeriod: document.getElementById('cfg-last-period').value, 
     cycleLen: parseInt(document.getElementById('cfg-cycle-len').value) || 28,
     displayName: sanitizePromptText(document.getElementById('cfg-display-name').value, 30),
     companionName: sanitizePromptText(document.getElementById('cfg-companion-name').value, 30),
@@ -3362,7 +3246,7 @@ async function saveSettings() {
     model: document.getElementById('cfg-model').value
   };
   await setConfig(nextConfig);
-  configCache = null;
+  configCache = null; // 清除配置缓存
   renderAICompanionUI(nextConfig);
   closeSettings();
   renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
@@ -3453,8 +3337,6 @@ function closeOnboarding() {
  * ============================================================ */
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // 注意：UI 初始化已移至 window load 事件处理器
-  // 这里只做数据迁移检查
   try {
     if (!getStoredSession()) {
       return;
@@ -3463,11 +3345,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const migrated = localStorage.getItem('smc_migrated_supabase_v2');
     if (!migrated) {
       console.log('检查是否需要迁移旧数据...');
-
+      
       // 先检查 Supabase 是否已有数据
       const existingRecords = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*', 'limit': 1 });
       const hasExistingData = Array.isArray(existingRecords) && existingRecords.length > 0;
-
+      
       if (hasExistingData) {
         console.log('Supabase 已有数据，跳过迁移');
       } else {
@@ -3489,8 +3371,48 @@ document.addEventListener('DOMContentLoaded', async function() {
       localStorage.setItem('smc_migrated_supabase_v2', '1');
       console.log('迁移标记已设置');
     }
+    
+    console.log('loading config...');
+    // 预加载配置缓存
+    configCache = await getConfig();
+    console.log('config loaded:', JSON.stringify(configCache));
+
+    // 检查是否需要显示新用户引导
+    checkOnboarding();
+
+    // 加载自定义标签
+    loadCustomChips();
+    renderCustomChips();
+    
+    // 每次打开都重置到当前月份和今天
+    rState.year = new Date().getFullYear();
+    rState.month = new Date().getMonth();
+    rState.selected = new Date().toISOString().split('T')[0];
+    
+    // 根据当前时间自动选择时间段
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      currentTimeSlot = 'morning';
+    } else if (hour < 18) {
+      currentTimeSlot = 'afternoon';
+    } else {
+      currentTimeSlot = 'evening';
+    }
+    
+    console.log('calling renderCalendar...');
+    await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+    console.log('renderCalendar done');
+    
+    // 高亮当前时间段标签
+    document.querySelectorAll('.time-tab').forEach(t => {
+      t.classList.toggle('active', t.getAttribute('data-time') === currentTimeSlot);
+    });
+    
+    await loadRecordPanel(rState.selected);
+    console.log('loadRecordPanel done');
   } catch(e) {
-    console.error('DOMContentLoaded migration ERROR:', e);
+    console.error('DOMContentLoaded ERROR:', e);
+    document.getElementById('r-month-title').textContent = '加载失败: ' + e.message;
   }
 });
 

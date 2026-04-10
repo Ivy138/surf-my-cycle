@@ -1,6 +1,12 @@
 const { allowCors, getUserFromRequest, json, readJsonBody, supabaseFetch } = require('./_lib');
 
 const ALLOWED_TABLES = new Set(['records', 'config', 'conversations', 'memory']);
+const UPSERT_CONFLICT_KEYS = {
+  records: 'user_id,date',
+  config: 'user_id',
+  conversations: 'user_id,date',
+  memory: 'user_id,key'
+};
 
 function sanitizeFilters(userId, filters = {}) {
   const next = { ...filters };
@@ -42,7 +48,12 @@ module.exports = async (req, res) => {
 
     if (req.method === 'POST') {
       const record = { ...(body.record || {}), user_id: user.id };
-      const response = await supabaseFetch(`/rest/v1/${table}`, {
+      const params = new URLSearchParams();
+      if (UPSERT_CONFLICT_KEYS[table]) {
+        params.set('on_conflict', UPSERT_CONFLICT_KEYS[table]);
+      }
+      const path = `/rest/v1/${table}${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await supabaseFetch(path, {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
         body: JSON.stringify(record)
