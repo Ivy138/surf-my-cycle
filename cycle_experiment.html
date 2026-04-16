@@ -1137,8 +1137,57 @@ async function repairAccountFromDefaultUserIfNeeded(userId) {
   return null;
 }
 
+// 登录成功后的通用流程
+async function onLoginSuccess(username, repairResult = null) {
+  // 清除登录/注册输入框
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('reg-username').value = '';
+  document.getElementById('reg-password').value = '';
+  document.getElementById('reg-password2').value = '';
+  
+  hideLoginPage();
+  updateUserSelector();
+  renderAICompanionUI(await getConfig());
+  await syncSelectedDateToAvailableRecord();
+  await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
+  await loadRecordPanel(rState.selected);
+  loadCustomChips();
+  renderCustomChips();
+  
+  const migrateMsg = repairResult && repairResult.recordsMigrated > 0
+    ? ` 已自动恢复 ${repairResult.recordsMigrated} 条历史记录。`
+    : '';
+  alert(`欢迎回来，${currentUsername || username}！${migrateMsg}`);
+}
+
 // 登录
 async function doLogin() {
+  // 如果已有有效session，直接使用
+  const existingSession = getStoredSession();
+  if (existingSession && existingSession.user) {
+    // 检查session是否过期
+    if (existingSession.expires_at && Date.now() / 1000 > existingSession.expires_at - 60) {
+      const refreshed = await refreshAuthSession();
+      if (!refreshed) {
+        alert('登录已过期，请重新输入账号密码登录');
+        return; // 不能继续登录
+      }
+      // 刷新成功，使用刷新后的session
+      const newSession = getStoredSession();
+      currentUserId = newSession.user.id;
+      currentUsername = newSession.user.username || '';
+      await onLoginSuccess(currentUsername, null);
+      return;
+    } else {
+      // session有效，直接登录
+      currentUserId = existingSession.user.id;
+      currentUsername = existingSession.user.username || '';
+      await onLoginSuccess(currentUsername, null);
+      return;
+    }
+  }
+
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   
@@ -1162,24 +1211,7 @@ async function doLogin() {
   currentUserId = payload.session.user.id;
   currentUsername = payload.session.user.username || username;
   const repairResult = await repairAccountFromDefaultUserIfNeeded(currentUserId);
-  
-  // 清除输入
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-  
-  hideLoginPage();
-  updateUserSelector();
-  renderAICompanionUI(await getConfig());
-  await syncSelectedDateToAvailableRecord();
-  await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
-  await loadRecordPanel(rState.selected);
-  loadCustomChips();
-  renderCustomChips();
-  
-  const repairMsg = repairResult && repairResult.recordsMigrated > 0
-    ? ` 已自动恢复 ${repairResult.recordsMigrated} 条历史记录。`
-    : '';
-  alert(`欢迎回来，${currentUsername || username}！${repairMsg}`);
+  await onLoginSuccess(username, repairResult);
 }
 
 // 注册
@@ -1254,22 +1286,8 @@ async function doRegister() {
     }
   }
   
-  // 清除输入
-  document.getElementById('reg-username').value = '';
-  document.getElementById('reg-password').value = '';
-  document.getElementById('reg-password2').value = '';
-  
-  hideLoginPage();
-  updateUserSelector();
-  renderAICompanionUI(await getConfig());
-  await syncSelectedDateToAvailableRecord();
-  await renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
-  await loadRecordPanel(rState.selected);
-  loadCustomChips();
-  renderCustomChips();
-  
-  const migrateMsg = oldData.length > 0 ? `，已迁移 ${oldData.length} 条记录` : '';
-  alert(`注册成功！欢迎，${currentUsername || username}！${migrateMsg}`);
+  // 注册后也需要初始化app（复用登录成功逻辑）
+  await onLoginSuccess(username, { recordsMigrated: oldData.length });
 }
 
 // 登出
@@ -1404,14 +1422,11 @@ function initApp() {
   })();
 }
 
-// 页面加载时检查登录状态
+// 页面加载时强制显示登录页（防止他人访问时直接看到你的数据）
 window.addEventListener('load', async () => {
-  if (!(await checkLoginStatus())) {
-    return; // 未登录，显示登录页面
-  }
-  await repairAccountFromDefaultUserIfNeeded(currentUserId);
-  updateUserSelector();
-  await initApp();
+  showLoginPage(); // 强制显示登录页
+  // 不自动登录，让用户自己选择是否输入账号密码
+  // 如果已有有效session，用户点登录时会自动使用（见doLogin里的逻辑）
 });
 
 const TIME_SLOTS = {
