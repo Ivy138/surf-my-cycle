@@ -3818,7 +3818,7 @@ async function renderCycleCountdown() {
   var cycleDay = (diff % cycleLen) + 1;
   if (diff < 0) cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
 
-  var daysToNextPeriod = cycleLen - cycleDay + 1;
+  var daysToNextPeriod = cycleLen - cycleDay;
   var nextPeriodDate = new Date(today);
   nextPeriodDate.setDate(nextPeriodDate.getDate() + daysToNextPeriod);
   var nextDateStr = (nextPeriodDate.getMonth()+1) + '月' + nextPeriodDate.getDate() + '日';
@@ -3827,8 +3827,8 @@ async function renderCycleCountdown() {
   var phaseName = phase ? phase.name : '未知';
   var phaseColor = phase ? phase.color : '#999';
 
-  var ovulationDay = 14;
-  var daysToOvulation = ovulationDay > cycleDay ? ovulationDay - cycleDay : cycleLen - cycleDay + ovulationDay;
+  var ovulationDay = Math.max(1, cycleLen - 14);
+  var daysToOvulation = ovulationDay >= cycleDay ? ovulationDay - cycleDay : cycleLen - cycleDay + ovulationDay;
 
   card.style.display = '';
   container.innerHTML =
@@ -3858,8 +3858,8 @@ function renderTimeSlotChart(data) {
       if (!s || !s.mood) return;
       var target = slots[key];
       if (!target) return;
-      target.mood += +s.mood;
-      target.energy += +s.energy;
+      target.mood += +(s.mood || 0);
+      target.energy += +(s.energy || 0);
       target.focus += +(s.focus || 0);
       target.count++;
     });
