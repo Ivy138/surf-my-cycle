@@ -6,7 +6,7 @@
 <title>Surf My Cycle</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#e84a6a">
+<meta name="theme-color" content="#c4506a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="/assets/icons/smc-icon.svg">
@@ -133,63 +133,14 @@
     </div>
     <div id="rec-form" style="display:none;flex-direction:column;padding:16px">
 
-      <div class="phase-override-card">
-        <div class="phase-override-header">
-          <div>
-            <div class="phase-override-title">今天的阶段判断</div>
-            <div class="phase-override-desc" id="phase-override-desc">系统会先给预测，你也可以按自己的体感调整。</div>
-          </div>
-          <button class="phase-override-reset" id="phase-override-reset" onclick="clearManualPhaseOverride()" type="button">恢复系统预测</button>
-        </div>
-        <div class="phase-override-summary">
-          <span class="phase-pill predicted" id="predicted-phase-pill">系统预测：-</span>
-          <span class="phase-pill effective" id="effective-phase-pill">当前使用：-</span>
-        </div>
-        <div class="phase-override-options" id="phase-override-options">
-          <button type="button" class="phase-option" data-phase="月经期" onclick="selectManualPhaseOverride('月经期')">月经期</button>
-          <button type="button" class="phase-option" data-phase="卵泡期" onclick="selectManualPhaseOverride('卵泡期')">卵泡期</button>
-          <button type="button" class="phase-option" data-phase="排卵期" onclick="selectManualPhaseOverride('排卵期')">排卵期</button>
-          <button type="button" class="phase-option" data-phase="黄体期" onclick="selectManualPhaseOverride('黄体期')">黄体期</button>
-        </div>
-      </div>
-
-      <!-- 时间段选择器 -->
+      <!-- 时间段选择器 — always visible -->
       <div class="time-tabs">
         <div class="time-tab active" data-time="morning" onclick="selectTimeSlot(this)">🌅 早上</div>
         <div class="time-tab" data-time="afternoon" onclick="selectTimeSlot(this)">☀️ 下午</div>
         <div class="time-tab" data-time="evening" onclick="selectTimeSlot(this)">🌙 晚上</div>
       </div>
 
-      <!-- AI聊天区域 -->
-      <div class="ai-chat" id="ai-chat" style="margin-bottom:20px">
-        <div class="ai-chat-header">
-          <h4 id="ai-chat-title">🍃 和你的 AI 伙伴聊聊</h4>
-        </div>
-        <div class="ai-chat-messages" id="ai-messages"></div>
-        <div class="ai-input-row">
-          <input type="text" id="ai-input" placeholder="告诉 AI 伙伴你的感受..." onkeydown="handleAIInputKeydown(event)">
-          <button onclick="sendAI()" id="ai-send-btn">发送</button>
-        </div>
-      </div>
-
-      <!-- 笔记区域 -->
-      <div class="card" style="padding:16px 20px;margin-bottom:20px">
-        <div class="card-title" style="font-size:13px;color:var(--muted);margin-bottom:6px">📝 Summary</div>
-        <div id="rec-summary-meta" class="summary-meta">这个时段的重要内容会在到点后自动整理，你也可以继续手动修改。</div>
-        <textarea id="rec-note" rows="2" placeholder="记录这个时段的感受、想法或发生的事情..." style="border:none;padding:0;font-size:14px;min-height:60px"></textarea>
-      </div>
-
-      <div class="card todo-card">
-        <div class="card-title">✅ 今日 To Do</div>
-        <div class="todo-input-row">
-          <input type="text" id="todo-input" placeholder="把今天想做的事记下来..." onkeydown="handleTodoInputKeydown(event)">
-          <button type="button" id="todo-add-btn" onclick="addTodoItem()">添加</button>
-        </div>
-        <div class="todo-meta" id="todo-meta">今天还没有任务，先写下一件最想完成的事吧。</div>
-        <div class="todo-list" id="todo-list"></div>
-      </div>
-
-      <!-- 状态评分 -->
+      <!-- 状态评分 — always visible (core recording) -->
       <div class="card">
         <div class="card-title">📊 状态评分</div>
         <div id="score-benchmark"></div>
@@ -220,42 +171,108 @@
         </div>
       </div>
 
-      <!-- 饮食提醒 -->
-      <div id="diet-intervention"></div>
-
-      <!-- 标签和生理期 -->
-      <div class="card">
-        <div class="card-title">🏷️ 标签 & 生理期</div>
-        <select id="rec-period">
-          <option value="">无月经</option>
-          <option value="light">月经轻量</option>
-          <option value="medium">月经中量</option>
-          <option value="heavy">月经大量</option>
-          <option value="spotting">点滴出血</option>
-        </select>
-        <div id="recommended-chips"></div>
-        <div class="chips" id="custom-chips">
-          <div class="chip" onclick="toggleChip(this)">甜食</div>
-          <div class="chip" onclick="toggleChip(this)">咸味</div>
-          <div class="chip" onclick="toggleChip(this)">碳水</div>
-          <div class="chip" onclick="toggleChip(this)">蛋白质</div>
-          <div class="chip" onclick="toggleChip(this)">辛辣</div>
-          <div class="chip" onclick="toggleChip(this)">冷饮</div>
-          <div class="chip" onclick="toggleChip(this)">情绪化</div>
-          <div class="chip" onclick="toggleChip(this)">专注</div>
-          <div class="chip" onclick="toggleChip(this)">创意</div>
-          <div class="chip" onclick="toggleChip(this)">理性</div>
-          <div class="chip" onclick="toggleChip(this)">躁动</div>
-          <div class="chip" onclick="toggleChip(this)">平静</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <input type="text" id="new-chip-input" placeholder="输入新标签..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px" onkeypress="if(event.key==='Enter')addNewChip()">
-          <button onclick="addNewChip()" style="padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">+ 添加</button>
-        </div>
+      <!-- 笔记区域 — always visible -->
+      <div class="card" style="padding:var(--space-md) var(--space-lg)">
+        <div class="card-title" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-2xs)">📝 Summary</div>
+        <div id="rec-summary-meta" class="summary-meta">这个时段的重要内容会在到点后自动整理，你也可以继续手动修改。</div>
+        <textarea id="rec-note" rows="2" placeholder="记录这个时段的感受、想法或发生的事情..." style="border:none;padding:0;font-size:var(--text-sm);min-height:60px"></textarea>
       </div>
+
+      <!-- 饮食提醒 — dynamic, only shows when relevant -->
+      <div id="diet-intervention"></div>
 
       <div id="record-save-status" class="record-save-status">未修改</div>
       <button class="save-btn" onclick="saveRecord()">保存记录</button>
+
+      <!-- === Accordion sections — collapsed by default === -->
+
+      <details class="accordion-section">
+        <summary>🍃 和 AI 伙伴聊聊</summary>
+        <div class="accordion-body">
+          <div class="ai-chat" id="ai-chat">
+            <div class="ai-chat-header">
+              <h4 id="ai-chat-title">🍃 和你的 AI 伙伴聊聊</h4>
+            </div>
+            <div class="ai-chat-messages" id="ai-messages"></div>
+            <div class="ai-input-row">
+              <input type="text" id="ai-input" placeholder="告诉 AI 伙伴你的感受..." onkeydown="handleAIInputKeydown(event)">
+              <button onclick="sendAI()" id="ai-send-btn">发送</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-section">
+        <summary>✅ 今日 To Do</summary>
+        <div class="accordion-body">
+          <div class="todo-card">
+            <div class="todo-input-row">
+              <input type="text" id="todo-input" placeholder="把今天想做的事记下来..." onkeydown="handleTodoInputKeydown(event)">
+              <button type="button" id="todo-add-btn" onclick="addTodoItem()">添加</button>
+            </div>
+            <div class="todo-meta" id="todo-meta">今天还没有任务，先写下一件最想完成的事吧。</div>
+            <div class="todo-list" id="todo-list"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-section">
+        <summary>🏷️ 标签 & 生理期</summary>
+        <div class="accordion-body">
+          <select id="rec-period">
+            <option value="">无月经</option>
+            <option value="light">月经轻量</option>
+            <option value="medium">月经中量</option>
+            <option value="heavy">月经大量</option>
+            <option value="spotting">点滴出血</option>
+          </select>
+          <div id="recommended-chips"></div>
+          <div class="chips" id="custom-chips">
+            <div class="chip" onclick="toggleChip(this)">甜食</div>
+            <div class="chip" onclick="toggleChip(this)">咸味</div>
+            <div class="chip" onclick="toggleChip(this)">碳水</div>
+            <div class="chip" onclick="toggleChip(this)">蛋白质</div>
+            <div class="chip" onclick="toggleChip(this)">辛辣</div>
+            <div class="chip" onclick="toggleChip(this)">冷饮</div>
+            <div class="chip" onclick="toggleChip(this)">情绪化</div>
+            <div class="chip" onclick="toggleChip(this)">专注</div>
+            <div class="chip" onclick="toggleChip(this)">创意</div>
+            <div class="chip" onclick="toggleChip(this)">理性</div>
+            <div class="chip" onclick="toggleChip(this)">躁动</div>
+            <div class="chip" onclick="toggleChip(this)">平静</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <input type="text" id="new-chip-input" placeholder="输入新标签..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:var(--text-sm);min-height:44px" onkeypress="if(event.key==='Enter')addNewChip()">
+            <button onclick="addNewChip()" style="padding:10px 16px;background:var(--accent);color:var(--text-on-accent);border:none;border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:500;cursor:pointer;min-height:44px">+ 添加</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="accordion-section">
+        <summary>🔄 阶段调整</summary>
+        <div class="accordion-body">
+          <div class="phase-override-card" style="margin-bottom:0">
+            <div class="phase-override-header">
+              <div>
+                <div class="phase-override-title">今天的阶段判断</div>
+                <div class="phase-override-desc" id="phase-override-desc">系统会先给预测，你也可以按自己的体感调整。</div>
+              </div>
+              <button class="phase-override-reset" id="phase-override-reset" onclick="clearManualPhaseOverride()" type="button">恢复系统预测</button>
+            </div>
+            <div class="phase-override-summary">
+              <span class="phase-pill predicted" id="predicted-phase-pill">系统预测：-</span>
+              <span class="phase-pill effective" id="effective-phase-pill">当前使用：-</span>
+            </div>
+            <div class="phase-override-options" id="phase-override-options">
+              <button type="button" class="phase-option" data-phase="月经期" onclick="selectManualPhaseOverride('月经期')">月经期</button>
+              <button type="button" class="phase-option" data-phase="卵泡期" onclick="selectManualPhaseOverride('卵泡期')">卵泡期</button>
+              <button type="button" class="phase-option" data-phase="排卵期" onclick="selectManualPhaseOverride('排卵期')">排卵期</button>
+              <button type="button" class="phase-option" data-phase="黄体期" onclick="selectManualPhaseOverride('黄体期')">黄体期</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
     </div>
   </div>
 </div>
@@ -267,22 +284,48 @@
     <div class="stat-card"><div class="num" id="stat-streak">0</div><div class="lbl">连续记录天数</div></div>
   </div>
 
+  <!-- 周期预测倒计时 -->
+  <div class="chart-card" id="cycle-countdown-card" style="display:none">
+    <h3>🔮 周期预测</h3>
+    <p class="chart-narrative">根据你的周期数据，这是接下来的关键日期。</p>
+    <div id="cycle-countdown" class="cycle-countdown"></div>
+  </div>
+
   <!-- 个性化模式分析 -->
-  <div class="chart-card" style="background:linear-gradient(135deg,#fff5f7 0%,#fff 100%);border:2px solid var(--accent)">
-    <h3 style="color:var(--accent);display:flex;align-items:center;gap:8px">
-      <span>✨</span> 你的独特模式
-      <span style="font-size:11px;font-weight:400;color:var(--muted)">基于科学基线 + 你的实际数据</span>
-    </h3>
-    <div id="personal-pattern-analysis" style="margin-top:12px">
-      <div class="empty-state" style="padding:20px">记录至少一个完整周期后，将生成你的个性化分析...</div>
+  <div class="chart-card" style="background:var(--accent-ghost);border:1px solid var(--accent)">
+    <h3 style="color:var(--accent)">✨ 你的独特模式</h3>
+    <p class="chart-narrative">每个人的周期体验都不同。这里是你的实际数据与科学基线的对比，帮你看见属于自己的规律。</p>
+    <div id="personal-pattern-analysis" style="margin-top:var(--space-sm)">
+      <div class="empty-state" style="padding:var(--space-lg)">记录至少一个完整周期后，将生成你的个性化分析...</div>
     </div>
   </div>
 
-  <!-- 周期流程图 -->
   <div class="chart-card">
-    <h3>📈 月经周期能量流转图</h3>
-    <div class="mermaid-container" style="text-align:center;padding:10px;overflow-x:auto">
-      <pre class="mermaid">
+    <h3>📈 心情与能量趋势</h3>
+    <p class="chart-narrative">最近 30 天的波动全景。留意曲线的高低谷，它们往往对应着你周期中特定的阶段。</p>
+    <canvas id="trend-chart" height="180"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3>各周期阶段平均评分</h3>
+    <p class="chart-narrative">把同一阶段的多次记录汇总后，你在哪个阶段状态最好？哪个阶段需要多照顾自己？</p>
+    <canvas id="phase-chart" height="180"></canvas>
+  </div>
+
+  <!-- 时段能量分布 -->
+  <div class="chart-card">
+    <h3>🕐 各时段能量分布</h3>
+    <p class="chart-narrative">早上、下午、晚上，你的精力分布有明显差异吗？找到你的黄金时段。</p>
+    <canvas id="timeslot-chart" height="180"></canvas>
+  </div>
+
+  <!-- 周期流程图 — moved to bottom as reference -->
+  <details class="accordion-section" style="margin-top:0">
+    <summary>📖 周期科普：能量流转图</summary>
+    <div class="accordion-body">
+      <p class="chart-narrative" style="margin-bottom:var(--space-sm)">一个典型的 28 天周期中，激素水平如何影响你的精力和情绪。</p>
+      <div class="mermaid-container" style="text-align:center;padding:10px;overflow-x:auto">
+        <pre class="mermaid">
 flowchart LR
     subgraph A[月经期 1-5天]
         direction TB
@@ -317,25 +360,14 @@ flowchart LR
     C -->|Day 17| D
     D -->|Day 1| A
 
-    style A fill:#e74c3c,stroke:#c0392b,color:#fff
-    style B fill:#f39c12,stroke:#d68910,color:#fff
-    style C fill:#e91e63,stroke:#c2185b,color:#fff
-    style D fill:#9b59b6,stroke:#7d3c98,color:#fff
-      </pre>
+    style A fill:#b85045,stroke:#9a4038,color:#fff
+    style B fill:#b09030,stroke:#907828,color:#fff
+    style C fill:#b04878,stroke:#903862,color:#fff
+    style D fill:#8858a0,stroke:#6e4088,color:#fff
+        </pre>
+      </div>
     </div>
-  </div>
-
-  <!-- 周期预测倒计时 -->
-  <div class="chart-card" id="cycle-countdown-card" style="display:none">
-    <h3>🔮 周期预测</h3>
-    <div id="cycle-countdown" class="cycle-countdown"></div>
-  </div>
-
-  <div class="chart-card"><h3>最近30天 心情与能量趋势</h3><canvas id="trend-chart" height="180"></canvas></div>
-  <div class="chart-card"><h3>各周期阶段平均评分</h3><canvas id="phase-chart" height="180"></canvas></div>
-
-  <!-- 时段能量分布 -->
-  <div class="chart-card"><h3>🕐 各时段能量分布</h3><canvas id="timeslot-chart" height="180"></canvas></div>
+  </details>
 </div>
 
 <div class="modal" id="settings-modal" onclick="if(event.target===this)closeSettings()">
@@ -385,7 +417,7 @@ flowchart LR
         <div id="push-status" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="login-btn secondary" id="push-enable-btn" onclick="enablePushNotifications()" style="font-size:13px;flex:1">开启通知</button>
           <button class="login-btn secondary" id="push-test-btn" onclick="sendTestPush()" style="font-size:13px;flex:1;display:none">发送测试</button>
-          <button class="login-btn secondary" id="push-disable-btn" onclick="disablePushNotifications()" style="font-size:13px;flex:1;display:none;background:#fee;color:#c33">关闭通知</button>
+          <button class="login-btn secondary" id="push-disable-btn" onclick="disablePushNotifications()" style="font-size:var(--text-sm);flex:1;display:none;background:var(--error-bg);color:var(--error)">关闭通知</button>
         </div>
         <div id="push-message" style="font-size:12px;color:var(--muted);margin-top:8px"></div>
       </div>

@@ -994,9 +994,9 @@ window.addEventListener('online', () => {
 });
 
 const TIME_SLOTS = {
-  morning: { name: '早上', color: '#3498db' },
-  afternoon: { name: '下午', color: '#f39c12' },
-  evening: { name: '晚上', color: '#9b59b6' }
+  morning: { name: '早上', color: '#5088b8' },
+  afternoon: { name: '下午', color: '#b09030' },
+  evening: { name: '晚上', color: '#8858a0' }
 };
 const AUTO_SUMMARY_SCHEDULE = [
   { slot: 'morning', triggerHour: 12, label: '中午 12 点后总结今天早上' },
@@ -1854,11 +1854,11 @@ async function getCycleDay(dateStr) {
 
 function getPhase(day) {
   if (!day) return null;
-  if (day >= 1 && day <= 5) return { name:'月经期', color:'#e74c3c', tip:'雌孕激素低谷，身体修复中，允许自己休息' };
-  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#f39c12', tip:'雌激素逐渐上升，精力和专注力开始回升' };
-  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#e91e63', tip:'雌激素+雄激素高峰，性欲和创造力峰值，状态最佳' };
-  if (day >= 17 && day <= 21) return { name:'黄体期早期', color:'#9b59b6', tip:'孕激素升高，适合细致整理类工作' };
-  if (day >= 22 && day <= 28) return { name:'黄体期晚期', color:'#7d3c98', tip:'雌激素下降期，易疲劳情绪波动，对自己温柔点' };
+  if (day >= 1 && day <= 5) return { name:'月经期', color:'#b85045', tip:'雌孕激素低谷，身体修复中，允许自己休息' };
+  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#b09030', tip:'雌激素逐渐上升，精力和专注力开始回升' };
+  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#b04878', tip:'雌激素+雄激素高峰，性欲和创造力峰值，状态最佳' };
+  if (day >= 17 && day <= 21) return { name:'黄体期早期', color:'#8858a0', tip:'孕激素升高，适合细致整理类工作' };
+  if (day >= 22 && day <= 28) return { name:'黄体期晚期', color:'#6e4088', tip:'雌激素下降期，易疲劳情绪波动，对自己温柔点' };
   return null;
 }
 
@@ -1922,7 +1922,7 @@ async function renderCalendar(gridId, titleId, state, onClickDay) {
   }
 
   const phaseNames = ['月经期','卵泡期','排卵期','黄体期'];
-  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6'];
+  const phaseColors = ['#b85045','#b09030','#b04878','#8858a0'];
   
   // 预先获取配置以避免循环中多次调用
   let cfg = configCache;
@@ -2716,7 +2716,7 @@ async function saveRecord(options = {}) {
       setRecordSaveStatus('仅保存到本地，等待云端恢复', 'error');
       // 显示降级提示
       const tipDiv = document.createElement('div');
-      tipDiv.style.cssText = 'color:#f39c12;font-size:11px;margin-top:6px;padding:6px;background:#fff3cd;border-radius:6px;';
+      tipDiv.style.cssText = 'color:var(--warning);font-size:var(--text-xs);margin-top:6px;padding:6px;background:var(--warning-bg);border-radius:var(--radius-sm);';
       tipDiv.textContent = '⚠️ 当前使用本地存储，数据不会同步到云端';
       btn.parentNode.insertBefore(tipDiv, btn.nextSibling);
       setTimeout(() => tipDiv.remove(), 5000);
@@ -2737,7 +2737,7 @@ async function saveRecord(options = {}) {
     // 显示详细错误到页面
     const errorDiv = document.getElementById('save-error-msg') || document.createElement('div');
     errorDiv.id = 'save-error-msg';
-    errorDiv.style.cssText = 'color:#e84a6a;font-size:12px;margin-top:8px;padding:8px;background:#fce4ea;border-radius:8px;';
+    errorDiv.style.cssText = 'color:var(--error);font-size:var(--text-xs);margin-top:8px;padding:8px;background:var(--error-bg);border-radius:var(--radius-sm);';
     errorDiv.textContent = '错误: ' + (e.message || 'Supabase连接失败');
     btn.parentNode.insertBefore(errorDiv, btn.nextSibling);
     setTimeout(() => errorDiv.remove(), 10000);
@@ -3840,12 +3840,12 @@ async function renderCycleCountdown() {
     '<div class="countdown-item">' +
       '<div class="cd-value">' + daysToNextPeriod + '</div>' +
       '<div class="cd-label">距下次月经</div>' +
-      '<div class="cd-phase" style="background:#e74c3c">' + nextDateStr + '</div>' +
+      '<div class="cd-phase" style="background:#b85045">' + nextDateStr + '</div>' +
     '</div>' +
     '<div class="countdown-item">' +
       '<div class="cd-value">' + daysToOvulation + '</div>' +
       '<div class="cd-label">距下次排卵</div>' +
-      '<div class="cd-phase" style="background:#e91e63">约第' + ovulationDay + '天</div>' +
+      '<div class="cd-phase" style="background:#b04878">约第' + ovulationDay + '天</div>' +
     '</div>';
 }
 
@@ -3877,9 +3877,9 @@ function renderTimeSlotChart(data) {
     data: {
       labels: slotLabels,
       datasets: [
-        { label: '心情', data: moodData, backgroundColor: 'rgba(232,74,106,0.7)' },
-        { label: '能量', data: energyData, backgroundColor: 'rgba(243,156,18,0.7)' },
-        { label: '专注', data: focusData, backgroundColor: 'rgba(52,152,219,0.7)' }
+        { label: '心情', data: moodData, backgroundColor: 'rgba(184,80,104,0.7)' },
+        { label: '能量', data: energyData, backgroundColor: 'rgba(176,144,48,0.7)' },
+        { label: '专注', data: focusData, backgroundColor: 'rgba(80,136,184,0.7)' }
       ]
     },
     options: {
@@ -3976,8 +3976,8 @@ async function renderAnalysis() {
     trendChart = new Chart(document.getElementById('trend-chart'), {
       type: 'line',
       data: { labels, datasets: [
-        { label:'心情', data:moods, borderColor:'#e84a6a', backgroundColor:'rgba(232,74,106,.1)', tension:.4, fill:true },
-        { label:'能量', data:energies, borderColor:'#f39c12', backgroundColor:'rgba(243,156,18,.1)', tension:.4, fill:true }
+        { label:'心情', data:moods, borderColor:'#b85068', backgroundColor:'rgba(184,80,104,.1)', tension:.4, fill:true },
+        { label:'能量', data:energies, borderColor:'#b09030', backgroundColor:'rgba(176,144,48,.1)', tension:.4, fill:true }
       ]},
       options: { plugins:{ legend:{ position:'top' } }, scales:{ y:{ min:1,max:10 } }, responsive:true }
     });
@@ -3985,7 +3985,7 @@ async function renderAnalysis() {
 
   const phaseNames = ['月经期','卵泡期','排卵期','黄体期早期','黄体期晚期'];
   const phaseLabels = window.innerWidth < 700 ? ['月经','卵泡','排卵','黄体前','黄体后'] : phaseNames;
-  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6','#7d3c98'];
+  const phaseColors = ['#b85045','#b09030','#b04878','#8858a0','#6e4088'];
   
   // 先计算所有日期的cycleDay
   const cycleDays = {};
@@ -4456,8 +4456,8 @@ function renderScoreBenchmark(cycleDay) {
   if (!benchmark) return '';
   
   return `
-    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:8px;border-left:3px solid #f39c12">
-      <div style="font-size:12px;font-weight:600;color:#f39c12;margin-bottom:6px">📊 本期评分参考</div>
+    <div style="margin-bottom:12px;padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div style="font-size:var(--text-xs);font-weight:600;color:var(--warning);margin-bottom:6px">📊 本期评分参考</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${benchmark.message}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px">
         <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">精力 ${benchmark.energy.min}-${benchmark.energy.max}</span>
@@ -4521,11 +4521,12 @@ function renderDietIntervention(cycleDay) {
     </div>
   `).join('');
   
-  const borderColor = diet.priority === 'high' ? '#e74c3c' : '#f39c12';
-  
+  const stateColor = diet.priority === 'high' ? 'var(--error)' : 'var(--warning)';
+  const stateBg = diet.priority === 'high' ? 'var(--error-bg)' : 'var(--warning-bg)';
+
   return `
-    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);border-radius:8px;border-left:3px solid ${borderColor}">
-      <div style="font-size:13px;font-weight:600;color:${borderColor};margin-bottom:10px">${diet.title}</div>
+    <div style="margin-bottom:12px;padding:12px;background:${stateBg};border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div style="font-size:var(--text-sm);font-weight:600;color:${stateColor};margin-bottom:10px">${diet.title}</div>
       ${tipsHtml}
       <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">💡 推荐搭配示例：</div>
