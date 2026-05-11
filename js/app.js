@@ -4039,8 +4039,15 @@ function showPage(name, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tabs [role="tab"]').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
   document.getElementById('page-' + name).classList.add('active');
-  btn.classList.add('active');
-  btn.setAttribute('aria-selected', 'true');
+  if (btn && btn.hasAttribute('role')) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+  }
+  var headerTab = document.querySelector('.tabs [aria-controls="page-' + name + '"]');
+  if (headerTab) { headerTab.classList.add('active'); headerTab.setAttribute('aria-selected', 'true'); }
+  document.querySelectorAll('.bottom-tab[data-page]').forEach(function(t) {
+    t.classList.toggle('active', t.getAttribute('data-page') === name);
+  });
   if (name === 'analysis') renderAnalysis();
 }
 

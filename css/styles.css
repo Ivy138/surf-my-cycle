@@ -214,6 +214,8 @@ header nav { display: contents; }
 }
 
 .user-badge:hover { border-color: var(--accent); background: var(--accent-subtle); }
+.header-settings-btn { margin-left: var(--space-xs); }
+.logout-btn { background: var(--accent-subtle); color: var(--accent); }
 .user-badge-label { font-size: var(--text-2xs); line-height: 1.2; color: var(--text-muted); }
 .user-badge-name {
   font-size: var(--text-sm);
@@ -1729,33 +1731,83 @@ canvas { width: 100% !important; }
 .login-switch a:hover { text-decoration: underline; }
 
 /* ============================================================
+   Bottom Tab Bar (mobile only, hidden by default)
+   ============================================================ */
+.bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: var(--space-xs) 0 calc(var(--space-xs) + env(safe-area-inset-bottom));
+  z-index: 90;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2xs) var(--space-md);
+  min-height: 48px;
+  min-width: 64px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.bottom-tab.active { color: var(--accent); }
+.bottom-tab:hover:not(.active) { color: var(--text-secondary); }
+.bottom-tab-icon { font-size: 20px; line-height: 1; }
+.bottom-tab-label { font-size: var(--text-2xs); font-weight: 600; line-height: 1; }
+
+/* ============================================================
    Responsive — Mobile
    ============================================================ */
 @media (max-width: 700px) {
+  /* Bottom bar visible on mobile */
+  .bottom-bar { display: flex; }
+
+  /* Compact header — logo + user only, no tabs */
   header {
-    height: auto;
-    flex-wrap: wrap;
-    padding: var(--space-xs) var(--space-sm);
-    gap: var(--space-2xs);
+    height: 48px;
+    padding: 0 var(--space-sm);
+    gap: var(--space-xs);
+    padding-top: env(safe-area-inset-top);
   }
 
-  header h1 { font-size: var(--text-base); order: 0; }
+  header h1 { font-size: var(--text-base); }
 
-  .tabs { order: 1; margin-left: auto; gap: 2px; }
-  .tabs .tab { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-sm); min-height: 44px; }
+  /* Hide header tabs — bottom bar replaces them */
+  header nav { display: none; }
 
+  /* Compact user shell — just name + logout */
   .user-shell {
-    order: 2;
-    width: 100%;
-    justify-content: space-between;
-    margin-left: 0;
+    margin-left: auto;
     gap: var(--space-2xs);
   }
 
-  .user-badge { flex: 1; min-width: 0; padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-md); }
-  .user-badge-label { font-size: var(--text-2xs); }
+  .user-badge {
+    min-width: 0;
+    padding: var(--space-2xs) var(--space-sm);
+    border-radius: var(--radius-md);
+  }
+  .user-badge-label { display: none; }
   .user-badge-name { font-size: var(--text-xs); }
-  .user-shell .tab { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-xs); }
+
+  /* Hide settings button in header (moved to bottom bar) */
+  .header-settings-btn { display: none; }
+  .logout-btn {
+    padding: var(--space-2xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
 
   .phase-override-options { grid-template-columns: 1fr 1fr; }
 
@@ -1766,7 +1818,7 @@ canvas { width: 100% !important; }
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 88px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   .cal-panel,
@@ -1787,17 +1839,19 @@ canvas { width: 100% !important; }
   .rec-panel { order: 1; }
   .cal-panel { order: 2; }
 
-  #page-analysis { padding-bottom: 88px; }
+  #page-analysis { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   .stats-grid { grid-template-columns: 1fr 1fr; }
-
 
   .prompt-template-head { flex-direction: column; }
   .prompt-template-btn { width: 100%; }
 
   .user-panel-overview { grid-template-columns: 1fr; }
 
-  .app-container { padding-bottom: env(safe-area-inset-bottom); }
-  .quick-checkin-fab { display: flex; }
+  /* FAB above bottom bar */
+  .quick-checkin-fab {
+    display: flex;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
 
   .modal-box {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
