@@ -1,4 +1,5 @@
 const { allowCors, getUserFromRequest, json, readJsonBody, supabaseFetch } = require('./_lib');
+const { vapidPublicKey, sendPushToSubscription } = require('../lib/push');
 
 const ALLOWED_TABLES = new Set(['records', 'config', 'conversations', 'memory']);
 const UPSERT_CONFLICT_KEYS = {
@@ -30,6 +31,46 @@ module.exports = async (req, res) => {
   if (!user) return json(res, 401, { error: 'Unauthorized' });
 
   try {
+    if (req.query.push === 'public-key') {
+      return json(res, 200, { publicKey: vapidPublicKey || '' });
+    }
+
+    if (req.method === 'POST') {
+      const rawBody = await readJsonBody(req);
+
+      if (rawBody.push === 'subscribe' && rawBody.subscription) {
+        const record = { user_id: user.id, key: 'push_subscription', value: rawBody.subscription };
+        await supabaseFetch('/rest/v1/memory?on_conflict=user_id,key', {
+          method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(record)
+        });
+        return json(res, 200, { ok: true });
+      }
+
+      if (rawBody.push === 'unsubscribe') {
+        await supabaseFetch(`/rest/v1/memory?user_id=eq.${user.id}&key=eq.push_subscription`, {
+          method: 'DELETE'
+        });
+        return json(res, 200, { ok: true });
+      }
+
+      if (rawBody.push === 'test') {
+        const subRes = await supabaseFetch(`/rest/v1/memory?user_id=eq.${user.id}&key=eq.push_subscription&select=value`);
+        const rows = await subRes.json();
+        if (!rows || !rows.length || !rows[0].value) {
+          return json(res, 400, { error: '没有保存的推送订阅，请先开启通知' });
+        }
+        await sendPushToSubscription(rows[0].value, {
+          title: '🌊 Surf My Cycle',
+          body: '测试通知成功！你可以随时记录当前状态。'
+        });
+        return json(res, 200, { ok: true });
+      }
+
+      req._parsedBody = rawBody;
+    }
+
     if (req.method === 'GET') {
       const { table, ...query } = req.query;
       if (!ALLOWED_TABLES.has(table)) return json(res, 400, { error: 'Invalid table' });
@@ -42,7 +83,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const body = await readJsonBody(req);
+    const body = req._parsedBody || await readJsonBody(req);
     const table = body.table;
     if (!ALLOWED_TABLES.has(table)) return json(res, 400, { error: 'Invalid table' });
 

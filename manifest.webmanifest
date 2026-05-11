@@ -1,0 +1,17 @@
+{
+  "name": "Surf My Cycle",
+  "short_name": "SMC",
+  "description": "你的精力管理伙伴",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#f8f0f2",
+  "theme_color": "#e84a6a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/icons/smc-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

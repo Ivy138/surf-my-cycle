@@ -4743,6 +4743,183 @@ async function learnFromConversation(userMsg, aiReply, cycleDay) {
   extractInsightsFromConversation(userMsg, aiReply, cycleDay);
 }
 
-/* ============================================================
- * 🧩 模块13: 待扩展模块预留位置
- * ============================================================ */
+function openQuickCheckin() {
+  const today = getTodayDateKey();
+  const h = new Date().getHours();
+  const slot = h < 12 ? '早上' : h < 18 ? '下午' : '晚上';
+  const sub = document.getElementById('qc-subtitle');
+  if (sub) sub.textContent = today + ' · ' + slot + ' — 现在感觉怎样？';
+  const modal = document.getElementById('quick-checkin-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeQuickCheckin() {
+  const modal = document.getElementById('quick-checkin-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+// ===== PWA + Push Notifications =====
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').then(function (reg) {
+      window.__swReg = reg;
+      updatePushUI();
+    });
+  });
+}
+
+function updatePushUI() {
+  var enableBtn = document.getElementById('push-enable-btn');
+  var testBtn = document.getElementById('push-test-btn');
+  var disableBtn = document.getElementById('push-disable-btn');
+  var msg = document.getElementById('push-message');
+  if (!enableBtn) return;
+
+  if (!('PushManager' in window)) {
+    enableBtn.textContent = '此浏览器不支持推送';
+    enableBtn.disabled = true;
+    if (msg) msg.textContent = '请使用 Safari 并添加到主屏幕后再试。';
+    return;
+  }
+
+  navigator.serviceWorker.ready.then(function (reg) {
+    reg.pushManager.getSubscription().then(function (sub) {
+      if (sub) {
+        enableBtn.style.display = 'none';
+        testBtn.style.display = '';
+        disableBtn.style.display = '';
+        if (msg) msg.textContent = '通知已开启。';
+      } else {
+        enableBtn.style.display = '';
+        testBtn.style.display = 'none';
+        disableBtn.style.display = 'none';
+        if (msg) msg.textContent = '';
+      }
+    });
+  });
+}
+
+async function enablePushNotifications() {
+  var msg = document.getElementById('push-message');
+  try {
+    var permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      if (msg) msg.textContent = '通知权限被拒绝，请在系统设置中允许。';
+      return;
+    }
+    if (msg) msg.textContent = '正在获取推送密钥...';
+
+    var keyRes = await fetch('/api/data?push=public-key', {
+      headers: { Authorization: 'Bearer ' + getStoredToken() }
+    });
+    var keyData = await keyRes.json();
+    if (!keyData.publicKey) {
+      if (msg) msg.textContent = '服务端 VAPID 密钥未配置，请联系管理员。';
+      return;
+    }
+
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
+    });
+
+    await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getStoredToken() },
+      body: JSON.stringify({ push: 'subscribe', subscription: sub.toJSON() })
+    });
+
+    updatePushUI();
+    if (msg) msg.textContent = '通知已开启！';
+  } catch (e) {
+    if (msg) msg.textContent = '开启失败：' + e.message;
+  }
+}
+
+async function disablePushNotifications() {
+  var msg = document.getElementById('push-message');
+  try {
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+
+    await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getStoredToken() },
+      body: JSON.stringify({ push: 'unsubscribe' })
+    });
+
+    updatePushUI();
+    if (msg) msg.textContent = '通知已关闭。';
+  } catch (e) {
+    if (msg) msg.textContent = '关闭失败：' + e.message;
+  }
+}
+
+async function sendTestPush() {
+  var msg = document.getElementById('push-message');
+  try {
+    if (msg) msg.textContent = '正在发送测试通知...';
+    var res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getStoredToken() },
+      body: JSON.stringify({ push: 'test' })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      if (msg) msg.textContent = '测试通知已发送！';
+    } else {
+      if (msg) msg.textContent = data.error || '发送失败';
+    }
+  } catch (e) {
+    if (msg) msg.textContent = '发送失败：' + e.message;
+  }
+}
+
+function getStoredToken() {
+  var s = getStoredSession();
+  return (s && s.access_token) || '';
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var raw = atob(base64);
+  var arr = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+// ===== Quick Checkin =====
+
+async function saveQuickCheckin(level) {
+  closeQuickCheckin();
+  const today = getTodayDateKey();
+  const h = new Date().getHours();
+  const slotKey = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+  const energyMap = { high: 8, normal: 5, low: 3, sensitive: 4 };
+  const moodMap = { high: 8, normal: 6, low: 3, sensitive: 4 };
+  const chipMap = { high: '高能量', normal: '普通', low: '低能量', sensitive: '情绪敏感' };
+
+  try {
+    const existing = await getRecordWithDrafts(today) || { date: today, slots: {} };
+    if (!existing.slots) existing.slots = {};
+    const prev = existing.slots[slotKey] || {};
+    existing.slots[slotKey] = {
+      ...prev,
+      energy: energyMap[level] || 5,
+      mood: prev.mood || moodMap[level] || 5,
+      focus: prev.focus || 5,
+      social: prev.social || 5,
+      appetite: prev.appetite || 5,
+      chips: [...new Set([...(prev.chips || []), chipMap[level] || ''])].filter(Boolean),
+      saved_at: new Date().toISOString()
+    };
+    await saveRecordDB(existing);
+    renderCalendar('r-grid', 'r-month-title', rState, loadRecordPanel);
+  } catch (e) {
+    alert('补记失败，请重试');
+  }
+}

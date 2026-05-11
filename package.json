@@ -1,0 +1,7 @@
+{
+  "name": "surf-my-cycle",
+  "private": true,
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
