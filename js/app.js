@@ -2326,6 +2326,11 @@ async function loadRecordPanel(dateStr) {
   renderAIMessages();
   setRecordSaveStatus('已加载', 'saved');
   isHydratingRecordPanel = false;
+
+  if (window.innerWidth < 700) {
+    var recHeader = document.getElementById('rec-header');
+    if (recHeader) recHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // 轻量级 Markdown 解析器
@@ -3518,7 +3523,7 @@ async function sendAI() {
   btn.textContent = '发送';
 }
 
-let trendChart = null, phaseChart = null;
+let trendChart = null, phaseChart = null, timeSlotChart = null;
 
 /* ============================================================
  * 🧩 模块6.5: 个性化模式分析 (PERSONAL_PATTERN_ANALYSIS)
@@ -3799,6 +3804,92 @@ async function renderPersonalPatternAnalysis() {
  * 数据统计、趋势图表、周期对比
  * ============================================================ */
 
+async function renderCycleCountdown() {
+  var cfg = await getConfig();
+  var card = document.getElementById('cycle-countdown-card');
+  var container = document.getElementById('cycle-countdown');
+  if (!cfg.lastPeriod) { card.style.display = 'none'; return; }
+
+  var cycleLen = cfg.cycleLen || 28;
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var last = new Date(cfg.lastPeriod + 'T00:00:00');
+  var diff = Math.round((today - last) / 86400000);
+  var cycleDay = (diff % cycleLen) + 1;
+  if (diff < 0) cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+
+  var daysToNextPeriod = cycleLen - cycleDay + 1;
+  var nextPeriodDate = new Date(today);
+  nextPeriodDate.setDate(nextPeriodDate.getDate() + daysToNextPeriod);
+  var nextDateStr = (nextPeriodDate.getMonth()+1) + '月' + nextPeriodDate.getDate() + '日';
+
+  var phase = getPhase(cycleDay);
+  var phaseName = phase ? phase.name : '未知';
+  var phaseColor = phase ? phase.color : '#999';
+
+  var ovulationDay = 14;
+  var daysToOvulation = ovulationDay > cycleDay ? ovulationDay - cycleDay : cycleLen - cycleDay + ovulationDay;
+
+  card.style.display = '';
+  container.innerHTML =
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + cycleDay + '</div>' +
+      '<div class="cd-label">当前周期第几天</div>' +
+      '<div class="cd-phase" style="background:' + phaseColor + '">' + phaseName + '</div>' +
+    '</div>' +
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + daysToNextPeriod + '</div>' +
+      '<div class="cd-label">距下次月经</div>' +
+      '<div class="cd-phase" style="background:#e74c3c">' + nextDateStr + '</div>' +
+    '</div>' +
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + daysToOvulation + '</div>' +
+      '<div class="cd-label">距下次排卵</div>' +
+      '<div class="cd-phase" style="background:#e91e63">约第' + ovulationDay + '天</div>' +
+    '</div>';
+}
+
+function renderTimeSlotChart(data) {
+  var slots = { morning: { mood:0, energy:0, focus:0, count:0 }, afternoon: { mood:0, energy:0, focus:0, count:0 }, evening: { mood:0, energy:0, focus:0, count:0 } };
+  data.forEach(function(d) {
+    if (!d.slots) return;
+    Object.keys(d.slots).forEach(function(key) {
+      var s = d.slots[key];
+      if (!s || !s.mood) return;
+      var target = slots[key];
+      if (!target) return;
+      target.mood += +s.mood;
+      target.energy += +s.energy;
+      target.focus += +(s.focus || 0);
+      target.count++;
+    });
+  });
+
+  var slotLabels = ['早上', '下午', '晚上'];
+  var slotKeys = ['morning', 'afternoon', 'evening'];
+  var moodData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].mood / slots[k].count).toFixed(1) : 0; });
+  var energyData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].energy / slots[k].count).toFixed(1) : 0; });
+  var focusData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].focus / slots[k].count).toFixed(1) : 0; });
+
+  if (timeSlotChart) timeSlotChart.destroy();
+  timeSlotChart = new Chart(document.getElementById('timeslot-chart'), {
+    type: 'bar',
+    data: {
+      labels: slotLabels,
+      datasets: [
+        { label: '心情', data: moodData, backgroundColor: 'rgba(232,74,106,0.7)' },
+        { label: '能量', data: energyData, backgroundColor: 'rgba(243,156,18,0.7)' },
+        { label: '专注', data: focusData, backgroundColor: 'rgba(52,152,219,0.7)' }
+      ]
+    },
+    options: {
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { min: 0, max: 10 } },
+      responsive: true
+    }
+  });
+}
+
 async function renderAnalysis() {
   const data = (await getData()).sort((a,b) => a.date.localeCompare(b.date));
   let totalRecords = 0;
@@ -3925,6 +4016,9 @@ async function renderAnalysis() {
     data: { labels: phaseLabels, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
     options: { plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ maxRotation:45, minRotation:0, font:{ size: window.innerWidth < 700 ? 10 : 12 } } }, y:{ min:0,max:10 } }, responsive:true }
   });
+
+  await renderCycleCountdown();
+  renderTimeSlotChart(data);
 }
 
 function showPage(name, btn) {
@@ -4787,7 +4881,19 @@ if ('serviceWorker' in navigator) {
       window.__swReg = reg;
       updatePushUI();
     });
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'notification-click' && e.data.action === 'quick-checkin') {
+        if (typeof openQuickCheckin === 'function') openQuickCheckin();
+      }
+    });
   });
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'quick-checkin') {
+    window.addEventListener('load', function () {
+      setTimeout(function () { if (typeof openQuickCheckin === 'function') openQuickCheckin(); }, 500);
+    });
+    history.replaceState(null, '', '/');
+  }
 }
 
 function updatePushUI() {

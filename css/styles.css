@@ -176,6 +176,11 @@ select:focus{outline:none;border-color:#d4c4e0}
 .stat-card .lbl{font-size:10px;color:var(--muted);margin-top:2px}
 .chart-card{background:var(--surface);border-radius:var(--radius);padding:12px;border:1px solid var(--border)}
 .chart-card h3{font-size:12px;font-weight:600;margin-bottom:8px}
+.cycle-countdown{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.countdown-item{flex:1;min-width:100px;text-align:center;padding:12px 8px;border-radius:var(--radius);background:var(--bg)}
+.countdown-item .cd-value{font-size:24px;font-weight:700;color:var(--accent)}
+.countdown-item .cd-label{font-size:11px;color:var(--muted);margin-top:4px}
+.countdown-item .cd-phase{font-size:10px;margin-top:4px;padding:2px 8px;border-radius:10px;display:inline-block;color:#fff}
 .pattern-item{padding:12px;border-radius:8px;background:#fff;margin-bottom:10px;border:1px solid var(--border)}
 .pattern-item.highlight{background:var(--accent-light);border-color:var(--accent)}
 .pattern-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:6px}

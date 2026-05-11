@@ -325,8 +325,17 @@ flowchart LR
     </div>
   </div>
 
+  <!-- 周期预测倒计时 -->
+  <div class="chart-card" id="cycle-countdown-card" style="display:none">
+    <h3>🔮 周期预测</h3>
+    <div id="cycle-countdown" class="cycle-countdown"></div>
+  </div>
+
   <div class="chart-card"><h3>最近30天 心情与能量趋势</h3><canvas id="trend-chart" height="180"></canvas></div>
   <div class="chart-card"><h3>各周期阶段平均评分</h3><canvas id="phase-chart" height="180"></canvas></div>
+
+  <!-- 时段能量分布 -->
+  <div class="chart-card"><h3>🕐 各时段能量分布</h3><canvas id="timeslot-chart" height="180"></canvas></div>
 </div>
 
 <div class="modal" id="settings-modal" onclick="if(event.target===this)closeSettings()">
