@@ -8,5 +8,10 @@
       "source": "/sw.js",
       "headers": [{ "key": "Service-Worker-Allowed", "value": "/" }]
     }
+  ],
+  "crons": [
+    { "path": "/api/cron-push", "schedule": "0 0 * * *" },
+    { "path": "/api/cron-push", "schedule": "0 6 * * *" },
+    { "path": "/api/cron-push", "schedule": "0 13 * * *" }
   ]
 }

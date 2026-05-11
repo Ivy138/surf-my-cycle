@@ -994,9 +994,9 @@ window.addEventListener('online', () => {
 });
 
 const TIME_SLOTS = {
-  morning: { name: '早上', color: '#3498db' },
-  afternoon: { name: '下午', color: '#f39c12' },
-  evening: { name: '晚上', color: '#9b59b6' }
+  morning: { name: '早上', color: '#5088b8' },
+  afternoon: { name: '下午', color: '#b09030' },
+  evening: { name: '晚上', color: '#8858a0' }
 };
 const AUTO_SUMMARY_SCHEDULE = [
   { slot: 'morning', triggerHour: 12, label: '中午 12 点后总结今天早上' },
@@ -1854,11 +1854,11 @@ async function getCycleDay(dateStr) {
 
 function getPhase(day) {
   if (!day) return null;
-  if (day >= 1 && day <= 5) return { name:'月经期', color:'#e74c3c', tip:'雌孕激素低谷，身体修复中，允许自己休息' };
-  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#f39c12', tip:'雌激素逐渐上升，精力和专注力开始回升' };
-  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#e91e63', tip:'雌激素+雄激素高峰，性欲和创造力峰值，状态最佳' };
-  if (day >= 17 && day <= 21) return { name:'黄体期早期', color:'#9b59b6', tip:'孕激素升高，适合细致整理类工作' };
-  if (day >= 22 && day <= 28) return { name:'黄体期晚期', color:'#7d3c98', tip:'雌激素下降期，易疲劳情绪波动，对自己温柔点' };
+  if (day >= 1 && day <= 5) return { name:'月经期', color:'#b85045', tip:'雌孕激素低谷，身体修复中，允许自己休息' };
+  if (day >= 6 && day <= 13) return { name:'卵泡期', color:'#b09030', tip:'雌激素逐渐上升，精力和专注力开始回升' };
+  if (day >= 14 && day <= 16) return { name:'排卵期', color:'#b04878', tip:'雌激素+雄激素高峰，性欲和创造力峰值，状态最佳' };
+  if (day >= 17 && day <= 21) return { name:'黄体期早期', color:'#8858a0', tip:'孕激素升高，适合细致整理类工作' };
+  if (day >= 22 && day <= 28) return { name:'黄体期晚期', color:'#6e4088', tip:'雌激素下降期，易疲劳情绪波动，对自己温柔点' };
   return null;
 }
 
@@ -1922,7 +1922,7 @@ async function renderCalendar(gridId, titleId, state, onClickDay) {
   }
 
   const phaseNames = ['月经期','卵泡期','排卵期','黄体期'];
-  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6'];
+  const phaseColors = ['#b85045','#b09030','#b04878','#8858a0'];
   
   // 预先获取配置以避免循环中多次调用
   let cfg = configCache;
@@ -2326,6 +2326,11 @@ async function loadRecordPanel(dateStr) {
   renderAIMessages();
   setRecordSaveStatus('已加载', 'saved');
   isHydratingRecordPanel = false;
+
+  if (window.innerWidth < 700) {
+    var recHeader = document.getElementById('rec-header');
+    if (recHeader) recHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // 轻量级 Markdown 解析器
@@ -2711,7 +2716,7 @@ async function saveRecord(options = {}) {
       setRecordSaveStatus('仅保存到本地，等待云端恢复', 'error');
       // 显示降级提示
       const tipDiv = document.createElement('div');
-      tipDiv.style.cssText = 'color:#f39c12;font-size:11px;margin-top:6px;padding:6px;background:#fff3cd;border-radius:6px;';
+      tipDiv.style.cssText = 'color:var(--warning);font-size:var(--text-xs);margin-top:6px;padding:6px;background:var(--warning-bg);border-radius:var(--radius-sm);';
       tipDiv.textContent = '⚠️ 当前使用本地存储，数据不会同步到云端';
       btn.parentNode.insertBefore(tipDiv, btn.nextSibling);
       setTimeout(() => tipDiv.remove(), 5000);
@@ -2732,7 +2737,7 @@ async function saveRecord(options = {}) {
     // 显示详细错误到页面
     const errorDiv = document.getElementById('save-error-msg') || document.createElement('div');
     errorDiv.id = 'save-error-msg';
-    errorDiv.style.cssText = 'color:#e84a6a;font-size:12px;margin-top:8px;padding:8px;background:#fce4ea;border-radius:8px;';
+    errorDiv.style.cssText = 'color:var(--error);font-size:var(--text-xs);margin-top:8px;padding:8px;background:var(--error-bg);border-radius:var(--radius-sm);';
     errorDiv.textContent = '错误: ' + (e.message || 'Supabase连接失败');
     btn.parentNode.insertBefore(errorDiv, btn.nextSibling);
     setTimeout(() => errorDiv.remove(), 10000);
@@ -3518,7 +3523,7 @@ async function sendAI() {
   btn.textContent = '发送';
 }
 
-let trendChart = null, phaseChart = null;
+let trendChart = null, phaseChart = null, timeSlotChart = null;
 
 /* ============================================================
  * 🧩 模块6.5: 个性化模式分析 (PERSONAL_PATTERN_ANALYSIS)
@@ -3799,6 +3804,92 @@ async function renderPersonalPatternAnalysis() {
  * 数据统计、趋势图表、周期对比
  * ============================================================ */
 
+async function renderCycleCountdown() {
+  var cfg = await getConfig();
+  var card = document.getElementById('cycle-countdown-card');
+  var container = document.getElementById('cycle-countdown');
+  if (!cfg.lastPeriod) { card.style.display = 'none'; return; }
+
+  var cycleLen = cfg.cycleLen || 28;
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var last = new Date(cfg.lastPeriod + 'T00:00:00');
+  var diff = Math.round((today - last) / 86400000);
+  var cycleDay = (diff % cycleLen) + 1;
+  if (diff < 0) cycleDay = (((diff % cycleLen) + cycleLen) % cycleLen) + 1;
+
+  var daysToNextPeriod = cycleLen - cycleDay;
+  var nextPeriodDate = new Date(today);
+  nextPeriodDate.setDate(nextPeriodDate.getDate() + daysToNextPeriod);
+  var nextDateStr = (nextPeriodDate.getMonth()+1) + '月' + nextPeriodDate.getDate() + '日';
+
+  var phase = getPhase(cycleDay);
+  var phaseName = phase ? phase.name : '未知';
+  var phaseColor = phase ? phase.color : '#999';
+
+  var ovulationDay = Math.max(1, cycleLen - 14);
+  var daysToOvulation = ovulationDay >= cycleDay ? ovulationDay - cycleDay : cycleLen - cycleDay + ovulationDay;
+
+  card.style.display = '';
+  container.innerHTML =
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + cycleDay + '</div>' +
+      '<div class="cd-label">当前周期第几天</div>' +
+      '<div class="cd-phase" style="background:' + phaseColor + '">' + phaseName + '</div>' +
+    '</div>' +
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + daysToNextPeriod + '</div>' +
+      '<div class="cd-label">距下次月经</div>' +
+      '<div class="cd-phase" style="background:#b85045">' + nextDateStr + '</div>' +
+    '</div>' +
+    '<div class="countdown-item">' +
+      '<div class="cd-value">' + daysToOvulation + '</div>' +
+      '<div class="cd-label">距下次排卵</div>' +
+      '<div class="cd-phase" style="background:#b04878">约第' + ovulationDay + '天</div>' +
+    '</div>';
+}
+
+function renderTimeSlotChart(data) {
+  var slots = { morning: { mood:0, energy:0, focus:0, count:0 }, afternoon: { mood:0, energy:0, focus:0, count:0 }, evening: { mood:0, energy:0, focus:0, count:0 } };
+  data.forEach(function(d) {
+    if (!d.slots) return;
+    Object.keys(d.slots).forEach(function(key) {
+      var s = d.slots[key];
+      if (!s || !s.mood) return;
+      var target = slots[key];
+      if (!target) return;
+      target.mood += +(s.mood || 0);
+      target.energy += +(s.energy || 0);
+      target.focus += +(s.focus || 0);
+      target.count++;
+    });
+  });
+
+  var slotLabels = ['早上', '下午', '晚上'];
+  var slotKeys = ['morning', 'afternoon', 'evening'];
+  var moodData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].mood / slots[k].count).toFixed(1) : 0; });
+  var energyData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].energy / slots[k].count).toFixed(1) : 0; });
+  var focusData = slotKeys.map(function(k) { return slots[k].count ? (slots[k].focus / slots[k].count).toFixed(1) : 0; });
+
+  if (timeSlotChart) timeSlotChart.destroy();
+  timeSlotChart = new Chart(document.getElementById('timeslot-chart'), {
+    type: 'bar',
+    data: {
+      labels: slotLabels,
+      datasets: [
+        { label: '心情', data: moodData, backgroundColor: 'rgba(184,80,104,0.7)' },
+        { label: '能量', data: energyData, backgroundColor: 'rgba(176,144,48,0.7)' },
+        { label: '专注', data: focusData, backgroundColor: 'rgba(80,136,184,0.7)' }
+      ]
+    },
+    options: {
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { min: 0, max: 10 } },
+      responsive: true
+    }
+  });
+}
+
 async function renderAnalysis() {
   const data = (await getData()).sort((a,b) => a.date.localeCompare(b.date));
   let totalRecords = 0;
@@ -3885,8 +3976,8 @@ async function renderAnalysis() {
     trendChart = new Chart(document.getElementById('trend-chart'), {
       type: 'line',
       data: { labels, datasets: [
-        { label:'心情', data:moods, borderColor:'#e84a6a', backgroundColor:'rgba(232,74,106,.1)', tension:.4, fill:true },
-        { label:'能量', data:energies, borderColor:'#f39c12', backgroundColor:'rgba(243,156,18,.1)', tension:.4, fill:true }
+        { label:'心情', data:moods, borderColor:'#b85068', backgroundColor:'rgba(184,80,104,.1)', tension:.4, fill:true },
+        { label:'能量', data:energies, borderColor:'#b09030', backgroundColor:'rgba(176,144,48,.1)', tension:.4, fill:true }
       ]},
       options: { plugins:{ legend:{ position:'top' } }, scales:{ y:{ min:1,max:10 } }, responsive:true }
     });
@@ -3894,7 +3985,7 @@ async function renderAnalysis() {
 
   const phaseNames = ['月经期','卵泡期','排卵期','黄体期早期','黄体期晚期'];
   const phaseLabels = window.innerWidth < 700 ? ['月经','卵泡','排卵','黄体前','黄体后'] : phaseNames;
-  const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6','#7d3c98'];
+  const phaseColors = ['#b85045','#b09030','#b04878','#8858a0','#6e4088'];
   
   // 先计算所有日期的cycleDay
   const cycleDays = {};
@@ -3925,6 +4016,9 @@ async function renderAnalysis() {
     data: { labels: phaseLabels, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
     options: { plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ maxRotation:45, minRotation:0, font:{ size: window.innerWidth < 700 ? 10 : 12 } } }, y:{ min:0,max:10 } }, responsive:true }
   });
+
+  await renderCycleCountdown();
+  renderTimeSlotChart(data);
 }
 
 function showPage(name, btn) {
@@ -4362,8 +4456,8 @@ function renderScoreBenchmark(cycleDay) {
   if (!benchmark) return '';
   
   return `
-    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:8px;border-left:3px solid #f39c12">
-      <div style="font-size:12px;font-weight:600;color:#f39c12;margin-bottom:6px">📊 本期评分参考</div>
+    <div style="margin-bottom:12px;padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div style="font-size:var(--text-xs);font-weight:600;color:var(--warning);margin-bottom:6px">📊 本期评分参考</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${benchmark.message}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px">
         <span style="padding:3px 8px;background:#fff;border-radius:12px;border:1px solid #eee">精力 ${benchmark.energy.min}-${benchmark.energy.max}</span>
@@ -4427,11 +4521,12 @@ function renderDietIntervention(cycleDay) {
     </div>
   `).join('');
   
-  const borderColor = diet.priority === 'high' ? '#e74c3c' : '#f39c12';
-  
+  const stateColor = diet.priority === 'high' ? 'var(--error)' : 'var(--warning)';
+  const stateBg = diet.priority === 'high' ? 'var(--error-bg)' : 'var(--warning-bg)';
+
   return `
-    <div style="margin-bottom:12px;padding:12px;background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);border-radius:8px;border-left:3px solid ${borderColor}">
-      <div style="font-size:13px;font-weight:600;color:${borderColor};margin-bottom:10px">${diet.title}</div>
+    <div style="margin-bottom:12px;padding:12px;background:${stateBg};border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div style="font-size:var(--text-sm);font-weight:600;color:${stateColor};margin-bottom:10px">${diet.title}</div>
       ${tipsHtml}
       <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
         <div style="font-size:11px;color:var(--muted);margin-bottom:6px">💡 推荐搭配示例：</div>
@@ -4787,7 +4882,19 @@ if ('serviceWorker' in navigator) {
       window.__swReg = reg;
       updatePushUI();
     });
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'notification-click' && e.data.action === 'quick-checkin') {
+        if (typeof openQuickCheckin === 'function') openQuickCheckin();
+      }
+    });
   });
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('action') === 'quick-checkin') {
+    window.addEventListener('load', function () {
+      setTimeout(function () { if (typeof openQuickCheckin === 'function') openQuickCheckin(); }, 500);
+    });
+    history.replaceState(null, '', '/');
+  }
 }
 
 function updatePushUI() {

@@ -27,7 +27,8 @@ self.addEventListener('fetch', function (e) {
 });
 
 self.addEventListener('push', function (e) {
-  var data = e.data ? e.data.json() : {};
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) {}
   var title = data.title || 'Surf My Cycle';
   var options = {
     body: data.body || '记录一下现在的状态吧',
@@ -35,22 +36,23 @@ self.addEventListener('push', function (e) {
     badge: '/assets/icons/smc-192.png',
     tag: data.tag || 'smc-reminder',
     renotify: true,
-    data: { url: data.url || '/' }
+    data: { url: '/?action=quick-checkin', action: (data.data && data.data.action) || 'quick-checkin' }
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || '/';
+  var targetUrl = (e.notification.data && e.notification.data.url) || '/?action=quick-checkin';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
         if (list[i].url.indexOf(self.location.origin) !== -1 && 'focus' in list[i]) {
+          list[i].postMessage({ type: 'notification-click', action: 'quick-checkin' });
           return list[i].focus();
         }
       }
-      return self.clients.openWindow(url);
+      return self.clients.openWindow(targetUrl);
     })
   );
 });
