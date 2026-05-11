@@ -6,6 +6,7 @@
 <title>Surf My Cycle</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="manifest" href="/manifest.webmanifest">
+<!-- theme-color approximates --accent: oklch(62% 0.19 12) in sRGB hex -->
 <meta name="theme-color" content="#c4506a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -113,6 +114,7 @@
 </header>
 
 <div id="page-record" class="page active" role="tabpanel" aria-label="记录">
+  <h2 class="sr-only">每日记录</h2>
   <div class="cal-panel">
     <div class="cal-nav">
       <button onclick="prevMonth('r')">上月</button>
@@ -281,6 +283,7 @@
 </div>
 
 <div id="page-analysis" class="page" role="tabpanel" aria-label="分析">
+  <h2 class="sr-only">数据分析</h2>
   <div class="stats-grid">
     <div class="stat-card"><div class="num" id="stat-days">0</div><div class="lbl">累计记录天数</div></div>
     <div class="stat-card"><div class="num" id="stat-mood">-</div><div class="lbl">平均心情</div></div>
@@ -363,6 +366,11 @@ flowchart LR
     C -->|Day 17| D
     D -->|Day 1| A
 
+    %% Hex colors approximate OKLCH palette (Mermaid requires hex):
+    %% A: --phase-menstrual oklch(62% 0.18 25) ≈ #b85045
+    %% B: --phase-follicular oklch(70% 0.15 75) ≈ #b09030
+    %% C: --phase-ovulation oklch(63% 0.2 350) ≈ #b04878
+    %% D: --phase-luteal oklch(58% 0.14 310) ≈ #8858a0
     style A fill:#b85045,stroke:#9a4038,color:#fff
     style B fill:#b09030,stroke:#907828,color:#fff
     style C fill:#b04878,stroke:#903862,color:#fff
