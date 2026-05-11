@@ -108,8 +108,8 @@
       <div class="user-badge-label">用户</div>
       <div class="user-badge-name" id="user-badge-name">未登录</div>
     </button>
-    <button class="tab" onclick="openSettings()" style="margin-left:8px">设置</button>
-    <button class="tab" onclick="doLogout()" style="background:var(--accent-light);color:var(--accent)">退出</button>
+    <button class="tab header-settings-btn" onclick="openSettings()">设置</button>
+    <button class="tab logout-btn" onclick="doLogout()">退出</button>
   </div>
 </header>
 
@@ -539,6 +539,21 @@ flowchart LR
 </div>
 
 <button class="quick-checkin-fab" onclick="openQuickCheckin()" aria-label="快速补记">✏️</button>
+
+<nav class="bottom-bar" aria-label="主导航">
+  <button class="bottom-tab active" data-page="record" onclick="showPage('record',this)">
+    <span class="bottom-tab-icon">📝</span>
+    <span class="bottom-tab-label">记录</span>
+  </button>
+  <button class="bottom-tab" data-page="analysis" onclick="showPage('analysis',this)">
+    <span class="bottom-tab-icon">📊</span>
+    <span class="bottom-tab-label">分析</span>
+  </button>
+  <button class="bottom-tab" onclick="openSettings()">
+    <span class="bottom-tab-icon">⚙️</span>
+    <span class="bottom-tab-label">设置</span>
+  </button>
+</nav>
 </main>
 
 <div class="bottom-sheet-modal" id="quick-checkin-modal" onclick="if(event.target===this)closeQuickCheckin()">
