@@ -12,9 +12,10 @@
 <link rel="apple-touch-icon" href="/assets/icons/smc-icon.svg">
 </head>
 <body>
+<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <!-- 登录页面 -->
-<div id="login-page" class="login-container">
+<div id="login-page" class="login-container" role="main" aria-label="登录">
   <div class="login-box">
     <div class="login-brand">
       <h1>🌊 Surf My Cycle</h1>
@@ -59,7 +60,7 @@
 </div>
 
 <!-- 注册页面 -->
-<div id="register-page" class="login-container" style="display:none">
+<div id="register-page" class="login-container" role="main" aria-label="注册" style="display:none">
   <div class="login-box">
     <div class="login-brand">
       <h1>📝 注册账号</h1>
@@ -92,13 +93,15 @@
 </div>
 
 <!-- 主应用容器 -->
-<div id="app-container" class="app-container">
+<main id="app-container" class="app-container">
 <header>
   <h1>Surf My Cycle</h1>
-  <div class="tabs">
-    <button class="tab active" onclick="showPage('record',this)">记录</button>
-    <button class="tab" onclick="showPage('analysis',this)">分析</button>
-  </div>
+  <nav aria-label="主导航">
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" aria-controls="page-record" onclick="showPage('record',this)">记录</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="page-analysis" onclick="showPage('analysis',this)">分析</button>
+    </div>
+  </nav>
   <div class="user-shell">
     <button class="user-badge" id="user-badge" onclick="openUserPanel()">
       <div class="user-badge-label">用户</div>
@@ -109,7 +112,7 @@
   </div>
 </header>
 
-<div id="page-record" class="page active">
+<div id="page-record" class="page active" role="tabpanel" aria-label="记录">
   <div class="cal-panel">
     <div class="cal-nav">
       <button onclick="prevMonth('r')">上月</button>
@@ -118,10 +121,10 @@
     </div>
     <div class="cal-grid" id="r-grid"></div>
     <div class="legend" id="cycle-legend">
-      <div class="legend-item"><div class="legend-color" style="background:rgba(231,76,60,0.2)"></div>月经期</div>
-      <div class="legend-item"><div class="legend-color" style="background:rgba(243,156,18,0.2)"></div>卵泡期</div>
-      <div class="legend-item"><div class="legend-color" style="background:rgba(233,30,99,0.2)"></div>排卵期</div>
-      <div class="legend-item"><div class="legend-color" style="background:rgba(155,89,182,0.2)"></div>黄体期</div>
+      <div class="legend-item"><div class="legend-color" style="background:var(--phase-menstrual-bg)"></div>月经期</div>
+      <div class="legend-item"><div class="legend-color" style="background:var(--phase-follicular-bg)"></div>卵泡期</div>
+      <div class="legend-item"><div class="legend-color" style="background:var(--phase-ovulation-bg)"></div>排卵期</div>
+      <div class="legend-item"><div class="legend-color" style="background:var(--phase-luteal-bg)"></div>黄体期</div>
     </div>
   </div>
   <div class="rec-panel" id="rec-panel">
@@ -142,7 +145,7 @@
 
       <!-- 状态评分 — always visible (core recording) -->
       <div class="card">
-        <div class="card-title">📊 状态评分</div>
+        <div class="card-title">📊 状态评分 <button class="help-tip" aria-label="1-10分记录当下状态，长期积累后可看出周期规律" tabindex="0">?</button></div>
         <div id="score-benchmark"></div>
         <div class="slider-row">
           <label>心情</label>
@@ -277,7 +280,7 @@
   </div>
 </div>
 
-<div id="page-analysis" class="page">
+<div id="page-analysis" class="page" role="tabpanel" aria-label="分析">
   <div class="stats-grid">
     <div class="stat-card"><div class="num" id="stat-days">0</div><div class="lbl">累计记录天数</div></div>
     <div class="stat-card"><div class="num" id="stat-mood">-</div><div class="lbl">平均心情</div></div>
@@ -293,7 +296,7 @@
 
   <!-- 个性化模式分析 -->
   <div class="chart-card" style="background:var(--accent-ghost);border:1px solid var(--accent)">
-    <h3 style="color:var(--accent)">✨ 你的独特模式</h3>
+    <h3 style="color:var(--accent)">✨ 你的独特模式 <button class="help-tip" aria-label="基于你的实际数据与科学基线对比，需记录至少14天" tabindex="0">?</button></h3>
     <p class="chart-narrative">每个人的周期体验都不同。这里是你的实际数据与科学基线的对比，帮你看见属于自己的规律。</p>
     <div id="personal-pattern-analysis" style="margin-top:var(--space-sm)">
       <div class="empty-state" style="padding:var(--space-lg)">记录至少一个完整周期后，将生成你的个性化分析...</div>
@@ -301,20 +304,20 @@
   </div>
 
   <div class="chart-card">
-    <h3>📈 心情与能量趋势</h3>
+    <h3>📈 心情与能量趋势 <button class="help-tip" aria-label="展示最近30天心情和能量的变化曲线" tabindex="0">?</button></h3>
     <p class="chart-narrative">最近 30 天的波动全景。留意曲线的高低谷，它们往往对应着你周期中特定的阶段。</p>
     <canvas id="trend-chart" height="180"></canvas>
   </div>
 
   <div class="chart-card">
-    <h3>各周期阶段平均评分</h3>
+    <h3>各周期阶段平均评分 <button class="help-tip" aria-label="汇总同一阶段的多次记录，看哪个阶段状态最好" tabindex="0">?</button></h3>
     <p class="chart-narrative">把同一阶段的多次记录汇总后，你在哪个阶段状态最好？哪个阶段需要多照顾自己？</p>
     <canvas id="phase-chart" height="180"></canvas>
   </div>
 
   <!-- 时段能量分布 -->
   <div class="chart-card">
-    <h3>🕐 各时段能量分布</h3>
+    <h3>🕐 各时段能量分布 <button class="help-tip" aria-label="对比早上、下午、晚上的平均评分，找到你的黄金时段" tabindex="0">?</button></h3>
     <p class="chart-narrative">早上、下午、晚上，你的精力分布有明显差异吗？找到你的黄金时段。</p>
     <canvas id="timeslot-chart" height="180"></canvas>
   </div>
@@ -370,7 +373,7 @@ flowchart LR
   </details>
 </div>
 
-<div class="modal" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+<div class="modal" id="settings-modal" role="dialog" aria-label="设置" onclick="if(event.target===this)closeSettings()">
   <div class="modal-box">
     <div class="modal-header">
       <h3>设置</h3>
@@ -433,7 +436,7 @@ flowchart LR
   </div>
 </div>
 
-<div class="modal" id="user-panel-modal" onclick="if(event.target===this)closeUserPanel()">
+<div class="modal" id="user-panel-modal" role="dialog" aria-label="用户资料" onclick="if(event.target===this)closeUserPanel()">
   <div class="modal-box user-panel-box">
     <div class="modal-header">
       <h3>账户中心</h3>
@@ -484,7 +487,7 @@ flowchart LR
 </div>
 
 <!-- 新用户引导弹层 -->
-<div class="modal" id="onboarding-modal">
+<div class="modal" id="onboarding-modal" role="dialog" aria-label="初始化设置">
   <div class="modal-box onboarding-box">
     <div class="onboarding-header">
       <h2>欢迎使用 Surf My Cycle</h2>
@@ -528,7 +531,7 @@ flowchart LR
 </div>
 
 <button class="quick-checkin-fab" onclick="openQuickCheckin()" aria-label="快速补记">✏️</button>
-</div>
+</main>
 
 <div class="bottom-sheet-modal" id="quick-checkin-modal" onclick="if(event.target===this)closeQuickCheckin()">
   <div class="bottom-sheet-box">

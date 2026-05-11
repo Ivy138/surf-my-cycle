@@ -5,6 +5,20 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
  * 全局配置、常量定义、API密钥
  * ============================================================ */
 
+function showToast(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.innerHTML = '<span class="toast-icon">' + (icons[type] || '') + '</span><span class="toast-text">' + message + '</span>';
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.classList.add('toast-out');
+    toast.addEventListener('animationend', function() { toast.remove(); });
+  }, duration);
+}
+
 var _scrollY = 0;
 function lockBodyScroll() {
   _scrollY = window.scrollY;
@@ -392,7 +406,7 @@ async function saveUserPanel() {
   const savedConfig = await setConfig(nextConfig);
   if (!savedConfig) {
     setUserPanelSaveButtonState('idle');
-    alert('账户资料保存失败，请稍后再试。');
+    showToast('账户资料保存失败，请稍后再试', 'error');
     return;
   }
   configCache = savedConfig;
@@ -723,7 +737,7 @@ async function doLogin() {
   const password = document.getElementById('login-password').value;
   
   if (!username || !password) {
-    alert('请输入账号和密码');
+    showToast('请输入账号和密码', 'warning');
     return;
   }
   
@@ -734,7 +748,7 @@ async function doLogin() {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    alert(payload.error || '登录失败，请检查账号或密码');
+    showToast(payload.error || '登录失败，请检查账号或密码', 'error');
     return;
   }
 
@@ -754,7 +768,7 @@ async function doLogin() {
   const repairMsg = repairResult && repairResult.recordsMigrated > 0
     ? ` 已自动恢复 ${repairResult.recordsMigrated} 条历史记录。`
     : '';
-  alert(`欢迎回来，${currentUsername || username}！${repairMsg}`);
+  showToast(`欢迎回来，${currentUsername || username}！${repairMsg}`, 'success');
 }
 
 // 注册
@@ -764,24 +778,24 @@ async function doRegister() {
   const password2 = document.getElementById('reg-password2').value;
   
   if (!username || !password || !password2) {
-    alert('请填写所有信息');
+    showToast('请填写所有信息', 'warning');
     return;
   }
   
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-    alert('账号只能是3-20位字母、数字或下划线');
+    showToast('账号只能是3-20位字母、数字或下划线', 'warning');
     return;
   }
   
   // 验证密码长度
   if (password.length < 6) {
-    alert('密码至少6位');
+    showToast('密码至少6位', 'warning');
     return;
   }
   
   // 验证两次密码是否一致
   if (password !== password2) {
-    alert('两次输入的密码不一致');
+    showToast('两次输入的密码不一致', 'warning');
     return;
   }
   
@@ -792,7 +806,7 @@ async function doRegister() {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    alert(payload.error || '注册失败，请稍后再试');
+    showToast(payload.error || '注册失败，请稍后再试', 'error');
     return;
   }
 
@@ -808,7 +822,7 @@ async function doRegister() {
   hideLoginPage();
   updateUserSelector();
   await initApp();
-  alert(`注册成功！欢迎，${currentUsername || username}！请先完成初始化设置。`);
+  showToast(`注册成功！欢迎，${currentUsername || username}！`, 'success');
 }
 
 // 登出
@@ -839,10 +853,10 @@ async function migrateFromDefaultUser() {
       const migrateResponse = await apiRequest('/migrate-default-user', { method: 'POST' });
       const migratePayload = await migrateResponse.json().catch(() => ({}));
       if (!migrateResponse.ok || !(migratePayload.recordsMigrated || migratePayload.configMigrated)) {
-        alert('没有找到可恢复的旧账号数据');
+        showToast('没有找到可恢复的旧账号数据', 'warning');
         return;
       }
-      alert(`✅ 成功恢复 ${migratePayload.recordsMigrated || 0} 条云端记录！`);
+      showToast(`成功恢复 ${migratePayload.recordsMigrated || 0} 条云端记录`, 'success');
       configCache = null;
       renderCalendar('r-grid','r-month-title', rState, loadRecordPanel);
       loadRecordPanel(rState.selected);
@@ -864,12 +878,12 @@ async function migrateFromDefaultUser() {
     loadCustomChips();
     renderCustomChips();
     
-    alert(`✅ 成功恢复 ${oldData.length} 条记录！`);
+    showToast(`成功恢复 ${oldData.length} 条记录`, 'success');
     closeSettings();
     
   } catch(e) {
     console.error('恢复数据失败:', e);
-    alert('恢复数据失败: ' + e.message);
+    showToast('恢复数据失败: ' + e.message, 'error');
   }
 }
 
@@ -900,7 +914,7 @@ function switchUser(userId) {
   loadRecordPanel(rState.selected);
   loadCustomChips();
   renderCustomChips();
-  alert(`已切换到用户: ${userId}`);
+  showToast(`已切换到用户: ${userId}`, 'success');
 }
 
 function addNewUser() {
@@ -908,13 +922,13 @@ function addNewUser() {
   if (!name) return;
   // 验证用户名
   if (!/^[a-zA-Z0-9_]+$/.test(name)) {
-    alert('用户名只能包含英文、数字和下划线');
+    showToast('用户名只能包含英文、数字和下划线', 'warning');
     return;
   }
   // 检查是否已存在
   const users = getUserList();
   if (users.includes(name)) {
-    alert('该用户已存在');
+    showToast('该用户已存在', 'warning');
     return;
   }
   // 添加新用户
@@ -2628,7 +2642,7 @@ function addNewChip() {
   
   // 检查是否已存在（默认或自定义）
   if (DEFAULT_CHIPS.includes(text) || customChips.includes(text)) {
-    alert('标签已存在');
+    showToast('标签已存在', 'warning');
     return;
   }
   
@@ -2663,7 +2677,7 @@ async function saveRecord(options = {}) {
   // 验证数据有效性
   if (isNaN(mood) || isNaN(energy) || mood < 1 || mood > 10 || energy < 1 || energy > 10) {
     console.error('保存失败：评分数据无效');
-    alert('评分数据无效，请重试');
+    showToast('评分数据无效，请重试', 'error');
     return;
   }
   
@@ -4023,9 +4037,10 @@ async function renderAnalysis() {
 
 function showPage(name, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tabs [role="tab"]').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
   document.getElementById('page-' + name).classList.add('active');
   btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
   if (name === 'analysis') renderAnalysis();
 }
 
@@ -4102,7 +4117,7 @@ async function saveSettings() {
   const savedConfig = await setConfig(nextConfig);
   if (!savedConfig) {
     setSettingsSaveButtonState('idle');
-    alert('设置保存失败，这次没有写入云端。请稍后再试。');
+    showToast('设置保存失败，请稍后再试', 'error');
     return;
   }
   configCache = savedConfig;
@@ -4171,7 +4186,7 @@ async function nextOnboardingStep() {
         onboardingCompleted: false
       });
       if (!partialConfig) {
-        alert('初始化保存失败，请稍后再试。');
+        showToast('初始化保存失败，请稍后再试', 'error');
         return;
       }
       configCache = partialConfig;
@@ -4189,7 +4204,7 @@ async function nextOnboardingStep() {
       onboardingCompleted: true
     });
     if (!savedConfig) {
-      alert('初始化保存失败，请稍后再试。');
+      showToast('初始化保存失败，请稍后再试', 'error');
       return;
     }
     configCache = savedConfig;
@@ -5048,6 +5063,6 @@ async function saveQuickCheckin(level) {
     await saveRecordDB(existing);
     renderCalendar('r-grid', 'r-month-title', rState, loadRecordPanel);
   } catch (e) {
-    alert('补记失败，请重试');
+    showToast('补记失败，请重试', 'error');
   }
 }

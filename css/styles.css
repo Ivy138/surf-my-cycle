@@ -145,6 +145,7 @@ header h1 {
 /* ============================================================
    Tabs
    ============================================================ */
+header nav { display: contents; }
 .tabs { display: flex; gap: var(--space-2xs); margin-left: auto; }
 
 .tab {
@@ -1786,6 +1787,129 @@ canvas { width: 100% !important; }
   }
 
   .modal.open { align-items: flex-end; }
+}
+
+/* ============================================================
+   Toast Notifications
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  top: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  pointer-events: none;
+  width: min(90vw, 400px);
+}
+
+.toast {
+  pointer-events: auto;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(-12px);
+  animation: toast-in var(--duration-normal) var(--ease-out) forwards;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+}
+
+.toast.toast-out {
+  animation: toast-out var(--duration-normal) ease-in forwards;
+}
+
+.toast-icon { flex-shrink: 0; font-size: var(--text-base); }
+.toast-text { flex: 1; }
+
+.toast-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+.toast-error {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+.toast-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+.toast-info {
+  background: var(--accent-ghost);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+@keyframes toast-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-12px); }
+}
+
+/* ============================================================
+   Help Tooltips
+   ============================================================ */
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: help;
+  vertical-align: middle;
+  margin-left: var(--space-2xs);
+  position: relative;
+  border: none;
+  line-height: 1;
+}
+
+.help-tip:hover::after,
+.help-tip:focus-visible::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--text-on-accent);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  line-height: 1.4;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
+}
+
+.help-tip:hover::before,
+.help-tip:focus-visible::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--text);
+  z-index: 100;
 }
 
 /* ============================================================
