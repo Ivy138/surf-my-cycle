@@ -59,19 +59,26 @@ module.exports = async (req, res) => {
         const subRes = await supabaseFetch(`/rest/v1/memory?user_id=eq.${user.id}&key=eq.push_subscription&select=value`);
         const rows = await subRes.json();
         if (!rows || !rows.length || !rows[0].value) {
-          return json(res, 400, { error: '没有保存的推送订阅，请先开启通知' });
+          return json(res, 400, { error: '没有推送订阅记录，请先关闭再重新开启通知', debug: { rowCount: rows ? rows.length : 0 } });
         }
         let sub = rows[0].value;
+        const rawType = typeof sub;
         if (typeof sub === 'string') {
-          try { sub = JSON.parse(sub); } catch (_) { /* already object */ }
+          try { sub = JSON.parse(sub); } catch (e) {
+            return json(res, 400, { error: '订阅数据解析失败: ' + e.message, debug: { rawType, raw: sub.substring(0, 200) } });
+          }
         }
         if (!sub || !sub.endpoint) {
-          return json(res, 400, { error: '推送订阅数据异常，请关闭后重新开启通知' });
+          return json(res, 400, { error: '订阅数据缺少endpoint', debug: { rawType, keys: sub ? Object.keys(sub) : null } });
         }
-        await sendPushToSubscription(sub, {
-          title: '🌊 Surf My Cycle',
-          body: '测试通知成功！你可以随时记录当前状态。'
-        });
+        try {
+          await sendPushToSubscription(sub, {
+            title: '🌊 Surf My Cycle',
+            body: '测试通知成功！你可以随时记录当前状态。'
+          });
+        } catch (pushErr) {
+          return json(res, 500, { error: '推送发送失败: ' + (pushErr.body || pushErr.message), debug: { statusCode: pushErr.statusCode, endpoint: sub.endpoint.substring(0, 80) } });
+        }
         return json(res, 200, { ok: true });
       }
 

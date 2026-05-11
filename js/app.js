@@ -4871,7 +4871,7 @@ async function sendTestPush() {
     if (data.ok) {
       if (msg) msg.textContent = '测试通知已发送！';
     } else {
-      if (msg) msg.textContent = data.error || '发送失败';
+      if (msg) msg.textContent = (data.error || '发送失败') + (data.debug ? ' [' + JSON.stringify(data.debug) + ']' : '');
     }
   } catch (e) {
     if (msg) msg.textContent = '发送失败：' + e.message;
