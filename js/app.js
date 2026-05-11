@@ -5,6 +5,18 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
  * 全局配置、常量定义、API密钥
  * ============================================================ */
 
+var _scrollY = 0;
+function lockBodyScroll() {
+  _scrollY = window.scrollY;
+  document.body.classList.add('modal-open');
+  document.body.style.top = -_scrollY + 'px';
+}
+function unlockBodyScroll() {
+  document.body.classList.remove('modal-open');
+  document.body.style.top = '';
+  window.scrollTo(0, _scrollY);
+}
+
 const API_BASE = '/api';
 const AUTH_SESSION_KEY = 'smc_auth_session_v2';
 const CURRENT_USERNAME_KEY = 'smc_current_username';
@@ -339,10 +351,12 @@ async function openUserPanel() {
   const cfg = configCache || await getConfig();
   renderUserPanel(cfg);
   document.getElementById('user-panel-modal').classList.add('open');
+  lockBodyScroll();
 }
 
 function closeUserPanel() {
   document.getElementById('user-panel-modal').classList.remove('open');
+  unlockBodyScroll();
 }
 
 function setUserPanelSaveButtonState(state = 'idle') {
@@ -3934,9 +3948,11 @@ async function openSettings() {
   document.getElementById('cfg-ai-custom-prompt').value = cfg.aiCustomPrompt || '';
   document.getElementById('cfg-model').value = cfg.model || 'MiniMax-M2.7';
   document.getElementById('settings-modal').classList.add('open');
+  lockBodyScroll();
 }
 function closeSettings() {
   document.getElementById('settings-modal').classList.remove('open');
+  unlockBodyScroll();
 }
 function handleAiStyleSettingsChange() {
   const styleKey = document.getElementById('cfg-ai-style').value || DEFAULT_AI_STYLE_TEMPLATE;
@@ -4032,6 +4048,7 @@ function showOnboarding(cfg = {}) {
   document.getElementById('ob-step-2').style.display = 'none';
   document.getElementById('ob-next-btn').textContent = '下一步';
   document.getElementById('onboarding-modal').classList.add('open');
+  lockBodyScroll();
 }
 
 function renderOnboardingStyles() {
@@ -4094,6 +4111,7 @@ function skipOnboarding() {
 
 async function closeOnboarding() {
   document.getElementById('onboarding-modal').classList.remove('open');
+  unlockBodyScroll();
   const cfg = configCache || await getConfig();
   renderAICompanionUI(cfg);
   renderUserIdentityUI(cfg);
@@ -4752,11 +4770,13 @@ function openQuickCheckin() {
   if (sub) sub.textContent = today + ' · ' + slot + ' — 现在感觉怎样？';
   const modal = document.getElementById('quick-checkin-modal');
   if (modal) modal.classList.add('open');
+  lockBodyScroll();
 }
 
 function closeQuickCheckin() {
   const modal = document.getElementById('quick-checkin-modal');
   if (modal) modal.classList.remove('open');
+  unlockBodyScroll();
 }
 
 // ===== PWA + Push Notifications =====
