@@ -1,4 +1,5 @@
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;width:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f0f2;color:#333;min-height:100dvh}
 :root{--accent:#e84a6a;--accent-light:#fce4ea;--bg:#f8f0f2;--surface:#fff;--border:#e8d5da;--text:#2d1f24;--muted:#9a7a82;--radius:12px;--shadow:0 2px 12px rgba(232,74,106,.1)}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;box-shadow:var(--shadow)}
@@ -268,11 +269,12 @@ canvas{width:100%!important}
   .user-shell .tab{padding:6px 12px;font-size:12px}
   .phase-override-options{grid-template-columns:1fr 1fr}
   #page-record,#page-calendar{flex-direction:column}
-  .page.active{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:72px}
+  .page.active{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:88px}
   .cal-panel,.rec-panel,.detail-panel{width:100%;height:auto;overflow-y:visible;flex-shrink:0}
   .rec-panel,.detail-panel{border-left:none;border-top:1px solid var(--border)}
   .rec-panel{order:1}
   .cal-panel{order:2}
+  #page-analysis{padding-bottom:88px}
   .stats-grid{grid-template-columns:1fr 1fr}
   .prompt-template-head{flex-direction:column}
   .prompt-template-btn{width:100%}
@@ -324,5 +326,5 @@ canvas{width:100%!important}
 .login-switch{margin-top:24px;text-align:center;font-size:14px;color:#666}
 .login-switch a{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:none}
 .login-switch a:hover{text-decoration:underline}
-.app-container{display:none;flex-direction:column;height:100dvh}
+.app-container{display:none;flex-direction:column;height:100dvh;overflow-x:hidden}
 .app-container.active{display:flex}

@@ -3879,6 +3879,7 @@ async function renderAnalysis() {
   }
 
   const phaseNames = ['月经期','卵泡期','排卵期','黄体期早期','黄体期晚期'];
+  const phaseLabels = window.innerWidth < 700 ? ['月经','卵泡','排卵','黄体前','黄体后'] : phaseNames;
   const phaseColors = ['#e74c3c','#f39c12','#e91e63','#9b59b6','#7d3c98'];
   
   // 先计算所有日期的cycleDay
@@ -3907,8 +3908,8 @@ async function renderAnalysis() {
   if (phaseChart) phaseChart.destroy();
   phaseChart = new Chart(document.getElementById('phase-chart'), {
     type: 'bar',
-    data: { labels: phaseNames, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
-    options: { plugins:{ legend:{ display:false } }, scales:{ y:{ min:0,max:10 } }, responsive:true }
+    data: { labels: phaseLabels, datasets: [{ label:'平均心情', data:phaseData, backgroundColor:phaseColors }] },
+    options: { plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ maxRotation:45, minRotation:0, font:{ size: window.innerWidth < 700 ? 10 : 12 } } }, y:{ min:0,max:10 } }, responsive:true }
   });
 }
 
