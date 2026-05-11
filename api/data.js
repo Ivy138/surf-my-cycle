@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
       const rawBody = await readJsonBody(req);
 
       if (rawBody.push === 'subscribe' && rawBody.subscription) {
-        const record = { user_id: user.id, key: 'push_subscription', value: rawBody.subscription };
+        const record = { user_id: user.id, key: 'push_subscription', value: JSON.stringify(rawBody.subscription) };
         await supabaseFetch('/rest/v1/memory?on_conflict=user_id,key', {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -61,7 +61,14 @@ module.exports = async (req, res) => {
         if (!rows || !rows.length || !rows[0].value) {
           return json(res, 400, { error: '没有保存的推送订阅，请先开启通知' });
         }
-        await sendPushToSubscription(rows[0].value, {
+        let sub = rows[0].value;
+        if (typeof sub === 'string') {
+          try { sub = JSON.parse(sub); } catch (_) { /* already object */ }
+        }
+        if (!sub || !sub.endpoint) {
+          return json(res, 400, { error: '推送订阅数据异常，请关闭后重新开启通知' });
+        }
+        await sendPushToSubscription(sub, {
           title: '🌊 Surf My Cycle',
           body: '测试通知成功！你可以随时记录当前状态。'
         });
