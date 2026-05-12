@@ -1775,12 +1775,13 @@ canvas { width: 100% !important; }
   /* Bottom bar visible on mobile */
   .bottom-bar { display: flex; }
 
-  /* Compact header — logo + user only, no tabs */
+  /* Compact header — logo only, safe area aware */
   header {
-    height: 48px;
-    padding: 0 var(--space-sm);
+    height: calc(48px + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) var(--space-sm) 0;
     gap: var(--space-xs);
-    padding-top: env(safe-area-inset-top);
+    align-items: flex-end;
+    padding-bottom: 6px;
   }
 
   header h1 { font-size: var(--text-base); }
@@ -1788,26 +1789,8 @@ canvas { width: 100% !important; }
   /* Hide header tabs — bottom bar replaces them */
   header nav { display: none; }
 
-  /* Compact user shell — just name + logout */
-  .user-shell {
-    margin-left: auto;
-    gap: var(--space-2xs);
-  }
-
-  .user-badge {
-    min-width: 0;
-    padding: var(--space-2xs) var(--space-sm);
-    border-radius: var(--radius-md);
-  }
-  .user-badge-label { display: none; }
-  .user-badge-name { font-size: var(--text-xs); }
-
-  /* Hide settings button in header (moved to bottom bar) */
-  .header-settings-btn { display: none; }
-  .logout-btn {
-    padding: var(--space-2xs) var(--space-sm);
-    font-size: var(--text-xs);
-  }
+  /* Hide user shell — settings/logout moved to bottom bar */
+  .user-shell { display: none; }
 
   .phase-override-options { grid-template-columns: 1fr 1fr; }
 
@@ -1836,8 +1819,8 @@ canvas { width: 100% !important; }
     border-top: 1px solid var(--border);
   }
 
-  .rec-panel { order: 1; }
-  .cal-panel { order: 2; }
+  .cal-panel { order: 1; }
+  .rec-panel { order: 2; }
 
   #page-analysis { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   .stats-grid { grid-template-columns: 1fr 1fr; }
