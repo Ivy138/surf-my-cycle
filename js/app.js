@@ -2172,7 +2172,7 @@ async function flushRecordAutosave(reason = 'autosave') {
 function scheduleRecordAutosave(reason = 'field-change') {
   if (isHydratingRecordPanel || !currentRecDate) return;
   persistCurrentFormDraft();
-  setRecordSaveStatus('草稿已保存，等待同步...', 'saving');
+  setRecordSaveStatus('同步中...', 'saving');
   if (recordAutosaveTimer) clearTimeout(recordAutosaveTimer);
   recordAutosaveTimer = setTimeout(() => flushRecordAutosave(reason), 800);
 }
@@ -2684,7 +2684,6 @@ async function saveRecord(options = {}) {
   const btn = document.querySelector('.save-btn');
   if (!silent) {
     btn.textContent = '保存中...';
-    btn.disabled = true;
   }
   
   try {
@@ -2740,9 +2739,10 @@ async function saveRecord(options = {}) {
     }
     
     if (!silent) {
-      setTimeout(() => { 
-        btn.textContent = '更新记录';
-      }, 1500);
+      setTimeout(() => {
+        btn.textContent = '保存记录';
+        btn.classList.remove('saved');
+      }, 2000);
     }
   } catch (e) {
     console.error('保存失败:', e);
@@ -2761,7 +2761,7 @@ async function saveRecord(options = {}) {
       console.log('本地备份可用:', backup);
     }
   } finally {
-    if (!silent) btn.disabled = false;
+    // btn stays enabled throughout — never freeze the UI
   }
 }
 

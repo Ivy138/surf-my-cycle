@@ -442,13 +442,16 @@ header nav { display: contents; }
   color: var(--text-muted);
   text-align: center;
   transition: background var(--duration-fast) var(--ease-out),
-              color var(--duration-fast) var(--ease-out);
+              color var(--duration-fast) var(--ease-out),
+              transform 120ms var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2xs);
   min-height: 44px;
 }
+
+.time-tab:active { transform: scale(0.94); }
 
 .time-tab.active {
   background: var(--surface);
@@ -518,11 +521,14 @@ header nav { display: contents; }
   font-weight: 600;
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
+              background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out),
+              transform 120ms var(--ease-out);
   min-height: 44px;
 }
 
 .phase-option:hover { border-color: var(--accent); color: var(--accent); }
+.phase-option:active { transform: scale(0.94); }
 .phase-option.selected { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); }
 
 /* ============================================================
@@ -707,17 +713,13 @@ select:focus {
   font-weight: 700;
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
+              transform 120ms var(--ease-out);
   margin-top: var(--space-xs);
   min-height: 48px;
 }
 
-.save-btn:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.save-btn:active { transform: translateY(0); }
+.save-btn:hover { background: var(--accent-hover); }
+.save-btn:active { transform: scale(0.96); }
 
 .save-btn.saved {
   background: var(--success);
@@ -1844,6 +1846,20 @@ canvas { width: 100% !important; }
   }
 
   .modal.open { align-items: flex-end; }
+
+  /* Larger slider touch targets on mobile */
+  .slider-row input[type=range] { height: 8px; }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Centered save status — easier to see while scrolling */
+  .record-save-status { text-align: center; }
 }
 
 /* ============================================================
