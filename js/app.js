@@ -1,5 +1,45 @@
-// 初始化 Mermaid
-mermaid.initialize({ startOnLoad: true, theme: 'default' });
+// 按需加载第三方脚本（缓存 Promise，避免重复加载与首屏阻塞）
+const __scriptCache = {};
+function loadScript(src) {
+  if (__scriptCache[src]) return __scriptCache[src];
+  __scriptCache[src] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { delete __scriptCache[src]; reject(new Error('脚本加载失败: ' + src)); };
+    document.head.appendChild(s);
+  });
+  return __scriptCache[src];
+}
+
+async function ensureChartJs() {
+  if (window.Chart) return;
+  await loadScript('https://cdn.jsdelivr.net/npm/chart.js');
+}
+
+let __mermaidReady = false;
+async function ensureMermaid() {
+  await loadScript('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js');
+  if (!__mermaidReady) {
+    window.mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    __mermaidReady = true;
+  }
+}
+
+// 仅当用户展开「周期科普」折叠面板时才加载并渲染 Mermaid 图
+async function renderCycleMermaid(detailsEl) {
+  if (!detailsEl || !detailsEl.open || detailsEl.dataset.mermaidDone) return;
+  const el = detailsEl.querySelector('pre.mermaid');
+  if (!el) return;
+  try {
+    await ensureMermaid();
+    await window.mermaid.run({ nodes: [el] });
+    detailsEl.dataset.mermaidDone = '1';
+  } catch (e) {
+    console.error('Mermaid 加载失败', e);
+  }
+}
 /* ============================================================
  * 🧩 模块1: 配置与常量 (CONFIG)
  * 全局配置、常量定义、API密钥
@@ -3905,6 +3945,7 @@ function renderTimeSlotChart(data) {
 }
 
 async function renderAnalysis() {
+  await ensureChartJs();
   const data = (await getData()).sort((a,b) => a.date.localeCompare(b.date));
   let totalRecords = 0;
   let totalMood = 0;
