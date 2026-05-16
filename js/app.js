@@ -72,6 +72,7 @@ function unlockBodyScroll() {
 }
 
 const API_BASE = '/api';
+const API_TIMEOUT_MS = 15000;
 const AUTH_SESSION_KEY = 'smc_auth_session_v2';
 const CURRENT_USERNAME_KEY = 'smc_current_username';
 const LEGACY_DEFAULT_USER_MIGRATION_TARGETS = new Set(['18800129147']);
@@ -114,7 +115,15 @@ async function apiRequest(path, options = {}) {
   if (session && session.access_token) {
     headers.Authorization = 'Bearer ' + session.access_token;
   }
-  const response = await fetch(API_BASE + path, { ...options, headers });
+  // 给每个请求加超时，避免单个卡住的请求把首屏拖到几十秒以上。
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(API_BASE + path, { ...options, headers, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (response.status === 401 && session && session.refresh_token && !options._retried) {
     const refreshed = await refreshAuthSession();
     if (refreshed) {
@@ -991,10 +1000,10 @@ function updateUserSelector() {
 function initApp() {
   // 初始化应用
   return (async () => {
-    const [cfg] = await Promise.all([
-      getConfig(),
-      flushPendingSyncQueue()
-    ]);
+    const cfg = await getConfig();
+    // 待同步队列在后台清空，绝不阻塞首屏/日历渲染：
+    // 队列积压时逐条重传可耗时数十秒甚至上百秒，必须异步进行。
+    flushPendingSyncQueue().catch(e => console.error('后台同步队列失败', e));
     renderAICompanionUI(cfg);
     renderUserIdentityUI(cfg);
     setupRecordFieldAutosave();
