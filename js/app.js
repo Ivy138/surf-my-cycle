@@ -1179,9 +1179,48 @@ async function preloadStartupData() {
  * ============================================================ */
 
 // 数据操作
+// 后台用云端数据刷新本地缓存，回来后重绘日历（local-first 的"revalidate"环节）
+let cloudRefreshInFlight = false;
+async function refreshCalendarDataFromCloud() {
+  if (cloudRefreshInFlight) return;
+  cloudRefreshInFlight = true;
+  try {
+    const [records, conversations] = await Promise.all([
+      sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*' }),
+      sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'select': 'date' })
+    ]);
+    let changed = false;
+    if (Array.isArray(records) && records.length > 0) {
+      setRecordsCache(records);
+      try { localStorage.setItem(currentUserId + '_smc_data', JSON.stringify(records)); } catch (e) {}
+      changed = true;
+    }
+    if (Array.isArray(conversations)) {
+      setConversationRowsCache(conversations);
+      changed = true;
+    }
+    if (changed && typeof renderCalendar === 'function') {
+      await renderCalendar('r-grid', 'r-month-title', rState, loadRecordPanel);
+      if (typeof loadRecordPanel === 'function') loadRecordPanel(rState.selected);
+    }
+  } catch (e) {
+    console.error('后台同步云端数据失败', e);
+  } finally {
+    cloudRefreshInFlight = false;
+  }
+}
+
 async function getData() {
   ensureDataCacheUser();
   if (recordsCache) return recordsCache;
+  // 本地优先：localStorage 有数据就立即返回，日历秒出，
+  // 同时后台向云端拉取，回来后更新缓存并重绘——不再干等网络。
+  const legacy = getDataLegacy();
+  if (Array.isArray(legacy) && legacy.length > 0) {
+    setRecordsCache(legacy);
+    refreshCalendarDataFromCloud();
+    return recordsCache;
+  }
   if (!recordsPromise) {
     recordsPromise = (async () => {
       const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
@@ -1210,6 +1249,24 @@ async function setData(arr) {
 }
 async function getConfig() {
   if (configCache) return configCache;
+  // 本地优先：本地已有配置(说明用户用过且完成过引导)就立即返回，
+  // 后台再与云端核对更新，避免启动干等网络。
+  const legacy = getConfigLegacy();
+  if (legacy && hasCompletedOnboarding(legacy)) {
+    configCache = legacy;
+    (async () => {
+      try {
+        const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
+        if (rows && rows[0] && rows[0].value) {
+          configCache = rows[0].value;
+          try { localStorage.setItem(currentUserId + '_smc_config', JSON.stringify(rows[0].value)); } catch (e) {}
+        }
+      } catch (e) {
+        console.error('后台同步配置失败', e);
+      }
+    })();
+    return configCache;
+  }
   const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
   configCache = (rows && rows[0]) ? (rows[0].value || {}) : getConfigLegacy();
   return configCache;
@@ -1353,13 +1410,9 @@ function getSlotSummarySourceSignature(slot = {}, messages = []) {
 async function getConversationRows() {
   ensureDataCacheUser();
   if (conversationRowsCache) return conversationRowsCache;
-  if (!conversationRowsPromise) {
-    conversationRowsPromise = (async () => {
-      const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'select': 'date' });
-      return setConversationRowsCache(rows);
-    })();
-  }
-  return conversationRowsPromise;
+  // 对话日期仅用于日历上的 💬 装饰标记，不应阻塞日历渲染。
+  // 先返回空集合让日历秒出，云端数据由后台刷新补上。
+  return setConversationRowsCache([]);
 }
 
 async function getConversationDateSet() {
@@ -1530,6 +1583,30 @@ async function getAIConversation(dateStr) {
     return conversationPromiseCache.get(normalizedDate);
   }
   const backupKey = `${currentUserId}_smc_conversation_${normalizedDate}`;
+  // 本地优先：有本地对话备份就立即返回，记录面板秒开；
+  // 后台再与云端核对，不让网络拖住面板渲染。
+  try {
+    const backup = JSON.parse(localStorage.getItem(backupKey) || 'null');
+    if (backup && Array.isArray(backup.messages)) {
+      const payload = { messages: backup.messages, summary: backup.summary || null };
+      setConversationCache(normalizedDate, payload);
+      (async () => {
+        try {
+          const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + normalizedDate, 'select': '*' });
+          if (rows && rows[0]) {
+            const fresh = { messages: rows[0].messages || [], summary: rows[0].summary || null };
+            try { localStorage.setItem(backupKey, JSON.stringify({ ...fresh, synced_at: new Date().toISOString() })); } catch (e) {}
+            setConversationCache(normalizedDate, fresh);
+          }
+        } catch (e) {
+          console.error('后台同步对话失败', e);
+        }
+      })();
+      return payload;
+    }
+  } catch (e) {
+    console.warn('读取本地对话备份失败:', backupKey, e);
+  }
   const request = (async () => {
     const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + normalizedDate, 'select': '*' });
     if (!rows || !rows[0]) {
