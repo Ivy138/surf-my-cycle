@@ -1381,6 +1381,12 @@ async function getLatestActivityDate() {
 
 async function syncSelectedDateToAvailableRecord() {
   const selectedDate = normalizeDateKey(rState.selected);
+  // 始终优先停在「今天」：每日记录类应用默认应让用户记录当天，
+  // 不能因为今天还没记录就跳到历史上最近有数据的那天（会导致记错日期）。
+  if (selectedDate === getTodayDateKey()) {
+    rState.selected = selectedDate;
+    return rState.selected;
+  }
   const [selectedRecord, conversationDates] = await Promise.all([
     getRecord(selectedDate),
     getConversationDateSet()
