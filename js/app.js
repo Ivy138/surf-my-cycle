@@ -1,5 +1,45 @@
-// 初始化 Mermaid
-mermaid.initialize({ startOnLoad: true, theme: 'default' });
+// 按需加载第三方脚本（缓存 Promise，避免重复加载与首屏阻塞）
+const __scriptCache = {};
+function loadScript(src) {
+  if (__scriptCache[src]) return __scriptCache[src];
+  __scriptCache[src] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => { delete __scriptCache[src]; reject(new Error('脚本加载失败: ' + src)); };
+    document.head.appendChild(s);
+  });
+  return __scriptCache[src];
+}
+
+async function ensureChartJs() {
+  if (window.Chart) return;
+  await loadScript('https://cdn.jsdelivr.net/npm/chart.js');
+}
+
+let __mermaidReady = false;
+async function ensureMermaid() {
+  await loadScript('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js');
+  if (!__mermaidReady) {
+    window.mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    __mermaidReady = true;
+  }
+}
+
+// 仅当用户展开「周期科普」折叠面板时才加载并渲染 Mermaid 图
+async function renderCycleMermaid(detailsEl) {
+  if (!detailsEl || !detailsEl.open || detailsEl.dataset.mermaidDone) return;
+  const el = detailsEl.querySelector('pre.mermaid');
+  if (!el) return;
+  try {
+    await ensureMermaid();
+    await window.mermaid.run({ nodes: [el] });
+    detailsEl.dataset.mermaidDone = '1';
+  } catch (e) {
+    console.error('Mermaid 加载失败', e);
+  }
+}
 /* ============================================================
  * 🧩 模块1: 配置与常量 (CONFIG)
  * 全局配置、常量定义、API密钥
@@ -32,6 +72,7 @@ function unlockBodyScroll() {
 }
 
 const API_BASE = '/api';
+const API_TIMEOUT_MS = 15000;
 const AUTH_SESSION_KEY = 'smc_auth_session_v2';
 const CURRENT_USERNAME_KEY = 'smc_current_username';
 const LEGACY_DEFAULT_USER_MIGRATION_TARGETS = new Set(['18800129147']);
@@ -74,7 +115,15 @@ async function apiRequest(path, options = {}) {
   if (session && session.access_token) {
     headers.Authorization = 'Bearer ' + session.access_token;
   }
-  const response = await fetch(API_BASE + path, { ...options, headers });
+  // 给每个请求加超时，避免单个卡住的请求把首屏拖到几十秒以上。
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(API_BASE + path, { ...options, headers, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (response.status === 401 && session && session.refresh_token && !options._retried) {
     const refreshed = await refreshAuthSession();
     if (refreshed) {
@@ -951,10 +1000,10 @@ function updateUserSelector() {
 function initApp() {
   // 初始化应用
   return (async () => {
-    const [cfg] = await Promise.all([
-      getConfig(),
-      flushPendingSyncQueue()
-    ]);
+    const cfg = await getConfig();
+    // 待同步队列在后台清空，绝不阻塞首屏/日历渲染：
+    // 队列积压时逐条重传可耗时数十秒甚至上百秒，必须异步进行。
+    flushPendingSyncQueue().catch(e => console.error('后台同步队列失败', e));
     renderAICompanionUI(cfg);
     renderUserIdentityUI(cfg);
     setupRecordFieldAutosave();
@@ -1130,9 +1179,48 @@ async function preloadStartupData() {
  * ============================================================ */
 
 // 数据操作
+// 后台用云端数据刷新本地缓存，回来后重绘日历（local-first 的"revalidate"环节）
+let cloudRefreshInFlight = false;
+async function refreshCalendarDataFromCloud() {
+  if (cloudRefreshInFlight) return;
+  cloudRefreshInFlight = true;
+  try {
+    const [records, conversations] = await Promise.all([
+      sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*' }),
+      sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'select': 'date' })
+    ]);
+    let changed = false;
+    if (Array.isArray(records) && records.length > 0) {
+      setRecordsCache(records);
+      try { localStorage.setItem(currentUserId + '_smc_data', JSON.stringify(records)); } catch (e) {}
+      changed = true;
+    }
+    if (Array.isArray(conversations)) {
+      setConversationRowsCache(conversations);
+      changed = true;
+    }
+    if (changed && typeof renderCalendar === 'function') {
+      await renderCalendar('r-grid', 'r-month-title', rState, loadRecordPanel);
+      if (typeof loadRecordPanel === 'function') loadRecordPanel(rState.selected);
+    }
+  } catch (e) {
+    console.error('后台同步云端数据失败', e);
+  } finally {
+    cloudRefreshInFlight = false;
+  }
+}
+
 async function getData() {
   ensureDataCacheUser();
   if (recordsCache) return recordsCache;
+  // 本地优先：localStorage 有数据就立即返回，日历秒出，
+  // 同时后台向云端拉取，回来后更新缓存并重绘——不再干等网络。
+  const legacy = getDataLegacy();
+  if (Array.isArray(legacy) && legacy.length > 0) {
+    setRecordsCache(legacy);
+    refreshCalendarDataFromCloud();
+    return recordsCache;
+  }
   if (!recordsPromise) {
     recordsPromise = (async () => {
       const rows = await sbGet('records', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
@@ -1161,6 +1249,24 @@ async function setData(arr) {
 }
 async function getConfig() {
   if (configCache) return configCache;
+  // 本地优先：本地已有配置(说明用户用过且完成过引导)就立即返回，
+  // 后台再与云端核对更新，避免启动干等网络。
+  const legacy = getConfigLegacy();
+  if (legacy && hasCompletedOnboarding(legacy)) {
+    configCache = legacy;
+    (async () => {
+      try {
+        const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
+        if (rows && rows[0] && rows[0].value) {
+          configCache = rows[0].value;
+          try { localStorage.setItem(currentUserId + '_smc_config', JSON.stringify(rows[0].value)); } catch (e) {}
+        }
+      } catch (e) {
+        console.error('后台同步配置失败', e);
+      }
+    })();
+    return configCache;
+  }
   const rows = await sbGet('config', { 'user_id': 'eq.' + currentUserId, 'select': '*' });
   configCache = (rows && rows[0]) ? (rows[0].value || {}) : getConfigLegacy();
   return configCache;
@@ -1304,13 +1410,9 @@ function getSlotSummarySourceSignature(slot = {}, messages = []) {
 async function getConversationRows() {
   ensureDataCacheUser();
   if (conversationRowsCache) return conversationRowsCache;
-  if (!conversationRowsPromise) {
-    conversationRowsPromise = (async () => {
-      const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'select': 'date' });
-      return setConversationRowsCache(rows);
-    })();
-  }
-  return conversationRowsPromise;
+  // 对话日期仅用于日历上的 💬 装饰标记，不应阻塞日历渲染。
+  // 先返回空集合让日历秒出，云端数据由后台刷新补上。
+  return setConversationRowsCache([]);
 }
 
 async function getConversationDateSet() {
@@ -1341,6 +1443,12 @@ async function getLatestActivityDate() {
 
 async function syncSelectedDateToAvailableRecord() {
   const selectedDate = normalizeDateKey(rState.selected);
+  // 始终优先停在「今天」：每日记录类应用默认应让用户记录当天，
+  // 不能因为今天还没记录就跳到历史上最近有数据的那天（会导致记错日期）。
+  if (selectedDate === getTodayDateKey()) {
+    rState.selected = selectedDate;
+    return rState.selected;
+  }
   const [selectedRecord, conversationDates] = await Promise.all([
     getRecord(selectedDate),
     getConversationDateSet()
@@ -1475,6 +1583,30 @@ async function getAIConversation(dateStr) {
     return conversationPromiseCache.get(normalizedDate);
   }
   const backupKey = `${currentUserId}_smc_conversation_${normalizedDate}`;
+  // 本地优先：有本地对话备份就立即返回，记录面板秒开；
+  // 后台再与云端核对，不让网络拖住面板渲染。
+  try {
+    const backup = JSON.parse(localStorage.getItem(backupKey) || 'null');
+    if (backup && Array.isArray(backup.messages)) {
+      const payload = { messages: backup.messages, summary: backup.summary || null };
+      setConversationCache(normalizedDate, payload);
+      (async () => {
+        try {
+          const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + normalizedDate, 'select': '*' });
+          if (rows && rows[0]) {
+            const fresh = { messages: rows[0].messages || [], summary: rows[0].summary || null };
+            try { localStorage.setItem(backupKey, JSON.stringify({ ...fresh, synced_at: new Date().toISOString() })); } catch (e) {}
+            setConversationCache(normalizedDate, fresh);
+          }
+        } catch (e) {
+          console.error('后台同步对话失败', e);
+        }
+      })();
+      return payload;
+    }
+  } catch (e) {
+    console.warn('读取本地对话备份失败:', backupKey, e);
+  }
   const request = (async () => {
     const rows = await sbGet('conversations', { 'user_id': 'eq.' + currentUserId, 'date': 'eq.' + normalizedDate, 'select': '*' });
     if (!rows || !rows[0]) {
@@ -3905,6 +4037,7 @@ function renderTimeSlotChart(data) {
 }
 
 async function renderAnalysis() {
+  await ensureChartJs();
   const data = (await getData()).sort((a,b) => a.date.localeCompare(b.date));
   let totalRecords = 0;
   let totalMood = 0;

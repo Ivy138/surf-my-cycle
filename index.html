@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Surf My Cycle</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <!-- theme-color approximates --accent: oklch(62% 0.19 12) in sRGB hex -->
@@ -326,7 +327,7 @@
   </div>
 
   <!-- 周期流程图 — moved to bottom as reference -->
-  <details class="accordion-section" style="margin-top:0">
+  <details class="accordion-section" style="margin-top:0" ontoggle="renderCycleMermaid(this)">
     <summary>📖 周期科普：能量流转图</summary>
     <div class="accordion-body">
       <p class="chart-narrative" style="margin-bottom:var(--space-sm)">一个典型的 28 天周期中，激素水平如何影响你的精力和情绪。</p>
@@ -578,9 +579,7 @@ flowchart LR
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script src="js/memory-integration.js"></script>
-<script src="js/app.js"></script>
+<script defer src="js/memory-integration.js"></script>
+<script defer src="js/app.js"></script>
 </body>
 </html>
